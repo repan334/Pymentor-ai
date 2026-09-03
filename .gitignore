@@ -1,0 +1,36 @@
+# Python virtual environment
+.venv/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and quality-tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime uploads and processed data
+data/uploads/*
+!data/uploads/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+# Application logs
+*.log
+logs/
