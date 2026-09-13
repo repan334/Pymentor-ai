@@ -51,10 +51,19 @@ Seluruh document dan chunk baru ditulis dalam satu transaksi singkat setelah par
 selesai. Konflik unique di-rollback lalu document pemenang dibaca kembali. Original
 file tidak disimpan; hanya checksum, metadata, reference text, dan chunk yang persisten.
 
-Tidak ada kolom `vector(n)` pada revision ini. Nilai `n` harus berasal dari model
-embedding yang benar-benar dipilih. Model dan dimensi tersebut belum ditentukan,
-jadi kolom serta index vector ditunda ke Phase 5 agar skema tidak mengunci asumsi
-yang salah.
+Revision `20260913_0003` diterapkan setelah smoke test live membuktikan
+`gemini-embedding-2` menghasilkan tepat 768 dimensi. Revision ini:
+
+- menambahkan `document_chunks.embedding vector(768)` dan hash isi sumber/vector;
+- menambahkan status indexing terpisah, identitas provider/model/dimensi/format,
+  checksum corpus, token claim, timestamp, dan kode kegagalan aman pada `documents`;
+- mengisi `content_sha256` untuk chunk lama tanpa menghapus atau mengindeksnya;
+- menetapkan dokumen lama sebagai `not_indexed`, sehingga status ingestion lama
+  `processed`/`ready` tidak membuatnya eligible secara keliru.
+
+Tidak ada HNSW/IVFFlat pada Phase 5. Query memakai exact cosine scan dengan operator
+pgvector dan urutan `cosine_distance`, lalu `chunk_id` sebagai tie-break deterministik.
+Vector dari profil berbeda tidak pernah dicampur.
 
 ## Alur migrasi aman
 
@@ -75,7 +84,8 @@ uv run alembic check
 ```
 
 Downgrade migration awal menghapus tabel aplikasi, sehingga jangan menjalankannya
-pada data pengguna tanpa rencana pemulihan. Downgrade `0002` juga dapat gagal bila
+pada data pengguna tanpa rencana pemulihan. Downgrade `0003` menghapus embedding dan
+status indexing, jadi juga bersifat kehilangan data hasil indexing. Downgrade `0002` dapat gagal bila
 satu checksum telah tersimpan dengan beberapa extraction profile, karena skema lama
 hanya mengizinkan satu checksum. Extension `vector` sengaja tidak dihapus oleh
 downgrade karena mungkin dipakai object lain di database.

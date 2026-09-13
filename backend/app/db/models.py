@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
@@ -36,6 +37,14 @@ class Document(Base):
         ),
         CheckConstraint("file_size_bytes >= 0", name="file_size_non_negative"),
         CheckConstraint("length(checksum_sha256) = 64", name="checksum_sha256_length"),
+        CheckConstraint(
+            "indexing_status IN ('not_indexed', 'indexing', 'ready', 'failed')",
+            name="indexing_status_allowed",
+        ),
+        CheckConstraint(
+            "embedding_dimensions IS NULL OR embedding_dimensions = 768",
+            name="embedding_dimensions_supported",
+        ),
         UniqueConstraint(
             "checksum_sha256",
             "extraction_profile",
@@ -74,6 +83,22 @@ class Document(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+    indexing_status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="not_indexed",
+        server_default=text("'not_indexed'"),
+    )
+    embedding_provider: Mapped[str | None] = mapped_column(String(40))
+    embedding_model: Mapped[str | None] = mapped_column(String(120))
+    embedding_dimensions: Mapped[int | None] = mapped_column(Integer)
+    embedding_input_version: Mapped[str | None] = mapped_column(String(80))
+    embedding_profile: Mapped[str | None] = mapped_column(String(255))
+    embedding_content_checksum: Mapped[str | None] = mapped_column(String(64))
+    indexing_token: Mapped[str | None] = mapped_column(String(36))
+    indexing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    indexed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    indexing_error_code: Mapped[str | None] = mapped_column(String(80))
 
     chunks: Mapped[list["DocumentChunk"]] = relationship(
         back_populates="document",
@@ -83,7 +108,7 @@ class Document(Base):
 
 
 class DocumentChunk(Base):
-    """Ordered source text; a fixed-dimension vector column is deferred to Phase 5."""
+    """Ordered source text and its optional Phase 5 embedding."""
 
     __tablename__ = "document_chunks"
     __table_args__ = (
@@ -97,6 +122,11 @@ class DocumentChunk(Base):
         CheckConstraint("start_char >= 0", name="start_char_non_negative"),
         CheckConstraint("end_char > start_char", name="valid_character_range"),
         CheckConstraint("page_number IS NULL OR page_number > 0", name="page_number_positive"),
+        CheckConstraint("length(content_sha256) = 64", name="content_sha256_length"),
+        CheckConstraint(
+            "embedding_content_sha256 IS NULL OR length(embedding_content_sha256) = 64",
+            name="embedding_content_sha256_length",
+        ),
         Index("ix_document_chunks_document_id", "document_id"),
     )
 
@@ -107,6 +137,9 @@ class DocumentChunk(Base):
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768))
+    embedding_content_sha256: Mapped[str | None] = mapped_column(String(64))
     start_char: Mapped[int] = mapped_column(Integer, nullable=False)
     end_char: Mapped[int] = mapped_column(Integer, nullable=False)
     page_number: Mapped[int | None] = mapped_column(Integer)

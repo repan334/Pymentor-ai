@@ -122,19 +122,35 @@ Lihat [panduan API](docs/API.md) untuk kontrak HTTP dan
 [panduan ingestion](docs/DOCUMENT-INGESTION.md) untuk format, limit, offset,
 deduplikasi, dan keterbatasan PDF.
 
+Untuk indexing dan pencarian semantik, simpan `GEMINI_API_KEY` hanya di `.env`,
+jalankan smoke test model, lalu gunakan ID hasil upload:
+
+```powershell
+uv run python backend\scripts\embedding_smoke.py
+$documentId = 1
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/documents/$documentId/index"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/documents/$documentId/index-status"
+$body = @{ query = "Bagaimana fungsi mengembalikan hasil?"; top_k = 3; document_ids = @($documentId) } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/search" -ContentType "application/json" -Body $body
+```
+
+Detail profil, batas kuota, status kegagalan, dan arti cosine distance tersedia di
+[panduan embedding dan retrieval](docs/EMBEDDINGS-AND-RETRIEVAL.md).
+
 ## Status Proyek
 
-Phase 1 sampai Phase 4 selesai pada 13 September 2026. Phase 5 belum dimulai.
+Phase 1 sampai Phase 5 selesai dan telah diverifikasi pada 14 September 2026.
 
 - Target: project `twilight-firefly-94879334`, branch `production`, database `neondb`.
 - FastAPI menyediakan `GET /api/v1/health`, `/docs`, dan `/openapi.json` tanpa
   melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
-- Alembic berada pada revision `20260913_0002`.
+- Alembic berada pada revision `20260913_0003`.
 - API ingestion mendukung UTF-8 TXT/Markdown dan PDF berbasis teks, menyimpan teks
   acuan serta chunk secara atomik, dan mengembalikan dokumen lama untuk upload
   identik tanpa menggandakan chunk.
-- Ekstensi pgvector aktif. Kolom embedding berdimensi tetap belum dibuat karena
-  model dan dimensinya belum dipilih; keputusan itu ditunda ke Phase 5.
+- Ekstensi pgvector aktif. Chunk dapat diindeks dengan profil tetap
+  `gemini/gemini-embedding-2/768/retrieval-asymmetric-v1`, disimpan sebagai
+  `vector(768)`, dan dicari dengan exact cosine nearest-neighbor.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

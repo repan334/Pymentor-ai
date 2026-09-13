@@ -104,11 +104,21 @@ into persisted `reference_text`, never byte coordinates in the uploaded file. Se
 
 ### Phase 5 — Embedding and Retrieval
 
-- Embedding provider abstraction.
-- Vector storage.
-- Similarity search.
-- Top-k retrieval.
-- Relevance threshold.
+- [x] Gemini embedding adapter with separate document/query input profiles.
+- [x] Validated 768-dimensional vector storage with profile and content identity.
+- [x] Recoverable, bounded, synchronous, and idempotent document indexing.
+- [x] Exact cosine similarity search in pgvector with compatible-document filters.
+- [x] Bounded top-k retrieval and explicit empty-corpus behavior.
+- [x] Unit, PostgreSQL, Gemini, and real HTTP verification.
+- [ ] Universal relevance threshold (intentionally deferred until evaluation/calibration).
+
+Phase 5 is complete for semantic retrieval. The live model verified on 2026-09-14 is
+`gemini-embedding-2` at 768 dimensions, using input format
+`retrieval-asymmetric-v1`. `processed` remains an ingestion state; only
+`indexing_status=ready` with a current matching profile/content hash is eligible for
+search. Search returns distance-ranked chunks, not generated answers. Lower cosine
+distance means closer in this embedding space and is not confidence or proof that an
+answer is present. See `docs/EMBEDDINGS-AND-RETRIEVAL.md`.
 
 ### Phase 6 — RAG Answer Engine
 

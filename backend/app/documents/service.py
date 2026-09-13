@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from hashlib import sha256
 from typing import Any
 
 from sqlalchemy import Select, func, select
@@ -31,6 +32,7 @@ class DocumentView:
     metadata: dict[str, Any]
     created_at: datetime
     updated_at: datetime
+    indexing_status: str = "not_indexed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +88,7 @@ def _as_document_view(document: Document, chunk_count: int) -> DocumentView:
         checksum_sha256=document.checksum_sha256,
         extraction_profile=document.extraction_profile,
         status=document.status,
+        indexing_status=document.indexing_status,
         character_count=len(document.reference_text),
         chunk_count=chunk_count,
         reference_text=document.reference_text,
@@ -137,6 +140,7 @@ class DocumentService:
                         document_id=document.id,
                         chunk_index=chunk.index,
                         content=chunk.content,
+                        content_sha256=sha256(chunk.content.encode("utf-8")).hexdigest(),
                         start_char=chunk.start_char,
                         end_char=chunk.end_char,
                         page_number=chunk.page_number,

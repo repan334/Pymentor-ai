@@ -23,6 +23,7 @@ class DocumentSummary(BaseModel):
     checksum_sha256: str
     extraction_profile: str
     status: str
+    indexing_status: str
     character_count: int
     chunk_count: int
     created_at: datetime

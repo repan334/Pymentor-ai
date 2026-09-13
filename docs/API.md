@@ -2,18 +2,21 @@
 
 ## Scope
 
-Phase 2 menyediakan fondasi HTTP lokal, kemudian Phase 4 menambahkan ingestion:
+Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, dan Phase 5
+menambahkan indexing serta semantic retrieval:
 
 - entrypoint ASGI `app.main:app`;
 - application factory `create_app()` untuk konfigurasi tes yang terisolasi;
 - router berversi berdasarkan `API_V1_PREFIX`;
 - process-health endpoint;
 - upload dan pembacaan dokumen/chunk;
+- indexing dokumen dan pemeriksaan status;
+- exact cosine top-k search terhadap chunk yang eligible;
 - dokumentasi Swagger UI dan schema OpenAPI bawaan FastAPI.
 
 Import dan startup aplikasi tidak membuat engine, melakukan query, membuat tabel,
-atau menjalankan Alembic. Endpoint chat, kuis, embedding, retrieval, dan download
-file asli belum tersedia.
+menjalankan Alembic, atau memanggil provider. Endpoint chat, kuis, dan download file
+asli belum tersedia.
 
 ## Configuration
 
@@ -78,6 +81,7 @@ hanya berarti ekstraksi dan chunking selesai, bukan siap retrieval AI.
   "checksum_sha256": "64-hex-character checksum",
   "extraction_profile": "text:utf-8-sig:v1",
   "status": "processed",
+  "indexing_status": "not_indexed",
   "character_count": 31,
   "chunk_count": 1,
   "reference_text": "Materi Python...",
@@ -110,6 +114,59 @@ Error ingestion aman dan tidak membawa stack trace atau detail koneksi:
   atau limit ekstraksi terlampaui.
 - 404: `document_not_found`.
 - 503: `database_unavailable`, hanya untuk exception database SQLAlchemy.
+
+## Indexing contracts
+
+```http
+POST /api/v1/documents/{document_id}/index
+GET /api/v1/documents/{document_id}/index-status
+```
+
+POST berjalan sinkron dan mengembalikan HTTP 200 setelah seluruh chunk tersimpan
+atau gagal; tidak ada worker tersembunyi dan tidak ada respons 202. Contoh sukses:
+
+```json
+{
+  "document_id": 20,
+  "indexing_status": "ready",
+  "indexed_chunk_count": 1,
+  "embedding_profile": "gemini:gemini-embedding-2:768:retrieval-asymmetric-v1",
+  "idempotent": false
+}
+```
+
+Pengulangan dengan profil dan hash isi yang sama memberi `idempotent: true` tanpa
+memanggil provider lagi. Claim baru ditolak dengan 409 selama indexing aktif; claim
+yang lebih lama dari `INDEX_CLAIM_TIMEOUT_SECONDS` dapat diambil alih. Limit chunk dan
+waktu total memberi 422/503 yang jelas. Kegagalan autentikasi/konfigurasi/provider
+dipetakan secara aman tanpa key, vector, isi dokumen lengkap, atau detail koneksi.
+
+## Search contract
+
+```http
+POST /api/v1/search
+Content-Type: application/json
+```
+
+```json
+{
+  "query": "Bagaimana fungsi mengembalikan hasil?",
+  "top_k": 3,
+  "document_ids": [20]
+}
+```
+
+`top_k` wajib 1–20. Query harus berisi teks dan tunduk pada limit karakter. Jumlah ID
+juga dibatasi konfigurasi. Jika `document_ids` dihilangkan, semua dokumen eligible
+dipertimbangkan; array kosong secara eksplisit menghasilkan `results: []` dengan
+`reason: "document_ids_empty"` dan tidak diperluas menjadi seluruh corpus. Jika tidak
+ada dokumen/profil eligible, reason adalah `no_eligible_documents` dan embedding query
+tidak dipanggil.
+
+Setiap hasil memuat `chunk_id`, `document_id`, `source_name`, `content`, offset karakter,
+metadata halaman, dan `cosine_distance`. Nilai distance lebih kecil berarti lebih
+dekat, bukan confidence, kebenaran jawaban, atau bukti bahwa jawaban tersedia. Belum
+ada threshold universal karena belum dikalibrasi.
 
 ## Run locally
 

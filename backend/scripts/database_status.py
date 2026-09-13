@@ -63,6 +63,26 @@ def main() -> None:
                     """
                 )
             ).scalars()
+            chunk_columns = connection.execute(
+                text(
+                    """
+                    SELECT column_name || ':' || data_type
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'document_chunks'
+                    ORDER BY ordinal_position
+                    """
+                )
+            ).scalars()
+            indexing_counts = connection.execute(
+                text(
+                    """
+                    SELECT indexing_status, count(*)
+                    FROM documents
+                    GROUP BY indexing_status
+                    ORDER BY indexing_status
+                    """
+                )
+            ).all()
 
         print(f"database={identity[0]}")
         print(f"schema={identity[1]}")
@@ -74,6 +94,11 @@ def main() -> None:
         print(f"documents={document_count}")
         print(f"document_chunks={chunk_count}")
         print(f"document_columns={','.join(document_columns)}")
+        print(f"document_chunk_columns={','.join(chunk_columns)}")
+        print(
+            "indexing_status_counts="
+            + ",".join(f"{status}:{count}" for status, count in indexing_counts)
+        )
     finally:
         engine.dispose()
 

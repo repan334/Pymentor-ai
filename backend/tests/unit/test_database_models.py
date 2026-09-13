@@ -5,10 +5,29 @@ def test_initial_schema_contains_relational_document_tables() -> None:
     assert set(Base.metadata.tables) == {"documents", "document_chunks"}
 
 
-def test_embedding_column_is_deferred_until_dimension_is_configured() -> None:
+def test_embedding_column_uses_verified_phase_5_dimension() -> None:
     columns = Base.metadata.tables["document_chunks"].columns
 
-    assert "embedding" not in columns
+    assert str(columns["embedding"].type) == "VECTOR(768)"
+    assert "content_sha256" in columns
+
+
+def test_document_model_tracks_indexing_separately_from_ingestion() -> None:
+    columns = Base.metadata.tables["documents"].columns
+
+    assert {
+        "indexing_status",
+        "embedding_provider",
+        "embedding_model",
+        "embedding_dimensions",
+        "embedding_input_version",
+        "embedding_profile",
+        "embedding_content_checksum",
+        "indexing_token",
+        "indexing_started_at",
+        "indexed_at",
+        "indexing_error_code",
+    } <= set(columns.keys())
 
 
 def test_document_model_persists_phase_4_source_and_deduplication_fields() -> None:

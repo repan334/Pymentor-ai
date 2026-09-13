@@ -72,3 +72,27 @@ def test_chunk_overlap_must_be_smaller_than_chunk_size() -> None:
             ingestion_chunk_size=100,
             ingestion_chunk_overlap=100,
         )
+
+
+def test_phase_5_embedding_profile_has_fixed_verified_identity() -> None:
+    settings = Settings(_env_file=None, database_url=None, gemini_api_key=None)
+
+    assert settings.embedding_provider == "gemini"
+    assert settings.embedding_model == "gemini-embedding-2"
+    assert settings.embedding_dimensions == 768
+    assert settings.embedding_profile_key == (
+        "gemini:gemini-embedding-2:768:retrieval-asymmetric-v1"
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("embedding_provider", "other"),
+        ("embedding_model", "another-model"),
+        ("embedding_dimensions", 3072),
+    ],
+)
+def test_incompatible_embedding_profile_is_rejected(field: str, value: object) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **{field: value})

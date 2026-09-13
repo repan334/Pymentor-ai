@@ -1,12 +1,13 @@
 import os
 import uuid
+from hashlib import sha256
 
 import pytest
 from app.db.models import Document, DocumentChunk
 from app.db.session import create_database_engine
 from sqlalchemy import insert, select, text
 
-EXPECTED_REVISION = "20260913_0002"
+EXPECTED_REVISION = "20260913_0003"
 
 pytestmark = pytest.mark.skipif(
     os.getenv("RUN_DATABASE_TESTS") != "1",
@@ -75,6 +76,7 @@ def test_document_round_trip_rolls_back_without_persisting_test_data() -> None:
                         document_id=document_id,
                         chunk_index=0,
                         content="isolated database test",
+                        content_sha256=sha256(b"isolated database test").hexdigest(),
                         start_char=0,
                         end_char=22,
                         extra_metadata={"test": True},
