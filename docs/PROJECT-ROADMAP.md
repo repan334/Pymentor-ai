@@ -154,3 +154,14 @@ The project is complete when:
 - Automated tests pass.
 - The application is deployed.
 - Secrets are not committed to Git.
+
+#### Checkpoint Progress
+
+- [x] 1.1 Text normalization and unit tests.
+- [x] 1.2 TextChunk validation and unit tests.
+- [x] 1.3 Fixed-size character chunking with overlap.
+- [ ] 1.4 File processing and integrated edge cases.
+- [ ] 1.5 Final Phase 1 quality gate.
+
+Chunk offsets refer to the exact input passed to TextChunker.split().
+Character-based chunking is a baseline, not token-aware or syntax-aware.
