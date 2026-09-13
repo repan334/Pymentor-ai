@@ -56,12 +56,17 @@ rewrites can alter multiline string content. See `docs/TEXT-PROCESSING.md`.
 
 ### Phase 2 — FastAPI Foundation
 
-- FastAPI application.
-- API versioning.
-- Request and response schemas.
-- Health endpoint.
-- Exception handling.
-- Automated API test.
+- [x] FastAPI application entrypoint and application factory.
+- [x] API versioning through the validated `API_V1_PREFIX` setting.
+- [x] Typed health response schema.
+- [x] Process-only `GET /api/v1/health` endpoint.
+- [x] Standard HTTP 404 and 405 error behavior.
+- [x] Automated TestClient coverage for routing, OpenAPI, and local docs.
+
+Phase 2 is complete. Import and startup do not connect to Neon, run migrations, or
+mutate database state. The health route checks only the API process. Interactive
+documentation is available at `/docs`; see `docs/API.md`. Upload, chat, quiz, and
+document CRUD endpoints remain outside this phase.
 
 ### Phase 3 — PostgreSQL and pgvector
 

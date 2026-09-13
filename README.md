@@ -90,15 +90,38 @@ uv run ruff format --check .
 Lihat [panduan database](docs/DATABASE.md) untuk keputusan skema dan prosedur
 migrasi yang aman.
 
+## Menjalankan API Lokal
+
+Jalankan server dari root repository:
+
+```powershell
+$env:UV_CACHE_DIR = "D:\uv-cache"
+uv run uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+Pada terminal PowerShell lain, periksa proses API:
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v1/health
+```
+
+Dokumentasi interaktif tersedia di `http://127.0.0.1:8000/docs`, sedangkan schema
+OpenAPI tersedia di `http://127.0.0.1:8000/openapi.json`. Tekan `Ctrl+C` pada
+terminal server untuk menghentikannya. Health endpoint hanya memeriksa proses API;
+endpoint tersebut tidak mengakses Neon atau penyedia model.
+
+Lihat [panduan API](docs/API.md) untuk struktur, kontrak, dan pengujian Phase 2.
+
 ## Status Proyek
 
-Phase 3 — PostgreSQL dan pgvector selesai pada 13 September 2026.
+Phase 1, Phase 2, dan Phase 3 selesai pada 13 September 2026. Phase 4 belum dimulai.
 
 - Target: project `twilight-firefly-94879334`, branch `production`, database `neondb`.
+- FastAPI menyediakan `GET /api/v1/health`, `/docs`, dan `/openapi.json` tanpa
+  melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
 - Alembic berada pada revision `20260913_0001`.
 - Ekstensi pgvector aktif. Kolom embedding berdimensi tetap belum dibuat karena
   model dan dimensinya belum dipilih; keputusan itu ditunda ke Phase 5.
-- Phase 1 dan fondasi API Phase 2 tetap mengikuti checkpoint terpisah pada roadmap;
-  penyelesaian Phase 3 tidak menyatakan kedua fase tersebut selesai.
+- Status dan batasan setiap fase dicatat terpisah dalam roadmap.

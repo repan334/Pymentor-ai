@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 
@@ -34,8 +34,8 @@ def _is_pooled(url: URL) -> bool:
     return bool(url.host and "-pooler." in url.host.lower())
 
 
-class DatabaseSettings(BaseSettings):
-    """Database settings loaded from process environment, .env, or .env.local."""
+class Settings(BaseSettings):
+    """Application settings loaded from environment, .env, or .env.local."""
 
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.local"),
@@ -44,15 +44,40 @@ class DatabaseSettings(BaseSettings):
         extra="ignore",
     )
 
-    database_url: SecretStr
+    app_name: str = "PyMentor AI"
+    app_env: str = "development"
+    app_debug: bool = False
+    api_v1_prefix: str = "/api/v1"
+
+    database_url: SecretStr | None = None
     database_url_unpooled: SecretStr | None = None
     neon_branch: str | None = None
+
+    @field_validator("app_name", "app_env")
+    @classmethod
+    def validate_non_empty_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be empty")
+        return value
+
+    @field_validator("api_v1_prefix")
+    @classmethod
+    def validate_api_v1_prefix(cls, value: str) -> str:
+        value = value.strip()
+        if not value.startswith("/"):
+            raise ValueError("API_V1_PREFIX must start with '/'")
+        if value == "/" or value.endswith("/"):
+            raise ValueError("API_V1_PREFIX must not be '/' or end with '/'")
+        if "?" in value or "#" in value:
+            raise ValueError("API_V1_PREFIX must be a path without query or fragment")
+        return value
 
     @property
     def application_url(self) -> URL:
         value = _read_secret(self.database_url, name="DATABASE_URL")
-        if value is None:  # pragma: no cover - DATABASE_URL is required above
-            raise ValueError("DATABASE_URL must not be empty")
+        if value is None:
+            raise ValueError("DATABASE_URL is required for database operations")
         return _as_psycopg_url(value, name="DATABASE_URL")
 
     @property
@@ -76,5 +101,10 @@ class DatabaseSettings(BaseSettings):
 
 
 @lru_cache
-def get_database_settings() -> DatabaseSettings:
-    return DatabaseSettings()  # type: ignore[call-arg]
+def get_settings() -> Settings:
+    return Settings()
+
+
+# Compatibility names keep the existing Phase 3 imports on the same settings system.
+DatabaseSettings = Settings
+get_database_settings = get_settings
