@@ -1,6 +1,7 @@
 import pytest
 
 from app.text_processing.models import TextChunk
+from dataclasses import FrozenInstanceError
 
 
 def test_text_chunk_stores_valid_data() -> None:
@@ -101,3 +102,43 @@ def test_text_chunk_rejects_non_dictionary_metadata() -> None:
             end_char=1,
             metadata=[],
         )
+
+
+@pytest.mark.parametrize("field_name", ["start_char", "end_char"])
+@pytest.mark.parametrize("bad_value", [True, 1.5, "0", None])
+def test_text_chunk_rejects_non_integer_offsets(
+    field_name: str,
+    bad_value: object,
+) -> None:
+    values = {
+        "content": "A",
+        "index": 0,
+        "start_char": 0,
+        "end_char": 1,
+    }
+    values[field_name] = bad_value
+
+    with pytest.raises(TypeError, match=f"{field_name} must be an integer"):
+        TextChunk(**values)
+
+
+def test_text_chunk_copies_supplied_metadata() -> None:
+    metadata = {"page": 1}
+    chunk = TextChunk(
+        content="A",
+        index=0,
+        start_char=0,
+        end_char=1,
+        metadata=metadata,
+    )
+
+    metadata["page"] = 99
+
+    assert chunk.metadata == {"page": 1}
+
+
+def test_text_chunk_rejects_content_reassignment() -> None:
+    chunk = TextChunk(content="A", index=0, start_char=0, end_char=1)
+
+    with pytest.raises(FrozenInstanceError):
+        chunk.content = "Changed"
