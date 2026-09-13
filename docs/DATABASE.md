@@ -25,7 +25,7 @@ tidak membocorkan kredensial.
 File `.env`, `.env.*`, dan `.neon` diabaikan Git; `.env.example` adalah satu-satunya
 template environment yang boleh dilacak dan tidak mengandung kredensial.
 
-## Skema awal
+## Skema
 
 Revision `20260913_0001` mengaktifkan extension `vector` dan membuat:
 
@@ -35,6 +35,21 @@ Revision `20260913_0001` mengaktifkan extension `vector` dan membuat:
 
 Constraint database menjaga tipe sumber/status yang dikenal, urutan chunk unik per
 dokumen, isi tidak kosong, serta rentang karakter dan nomor halaman yang valid.
+
+Revision `20260913_0002` menambahkan fondasi ingestion tanpa mengubah data lama:
+
+- `documents.file_size_bytes`: jumlah byte file upload; baris legacy diberi `0`.
+- `documents.reference_text`: teks persisten yang menjadi ruang koordinat chunk;
+  baris legacy diberi string kosong karena file asalnya tidak tersedia.
+- `documents.extraction_profile`: versi strategi ekstraksi untuk identitas deduplikasi.
+- unique constraint `(checksum_sha256, extraction_profile)` agar nama file tidak
+  menentukan identitas dan request bersamaan tidak membuat dokumen ganda.
+- status `processed` untuk ekstraksi dan chunking yang selesai. Nilai `ready` tetap
+  diterima hanya untuk kompatibilitas baris legacy; nilainya tidak berarti siap RAG.
+
+Seluruh document dan chunk baru ditulis dalam satu transaksi singkat setelah parsing
+selesai. Konflik unique di-rollback lalu document pemenang dibaca kembali. Original
+file tidak disimpan; hanya checksum, metadata, reference text, dan chunk yang persisten.
 
 Tidak ada kolom `vector(n)` pada revision ini. Nilai `n` harus berasal dari model
 embedding yang benar-benar dipilih. Model dan dimensi tersebut belum ditentukan,
@@ -60,8 +75,10 @@ uv run alembic check
 ```
 
 Downgrade migration awal menghapus tabel aplikasi, sehingga jangan menjalankannya
-pada data pengguna tanpa rencana pemulihan. Extension `vector` sengaja tidak
-dihapus oleh downgrade karena mungkin dipakai object lain di database.
+pada data pengguna tanpa rencana pemulihan. Downgrade `0002` juga dapat gagal bila
+satu checksum telah tersimpan dengan beberapa extraction profile, karena skema lama
+hanya mengizinkan satu checksum. Extension `vector` sengaja tidak dihapus oleh
+downgrade karena mungkin dipakai object lain di database.
 
 ## Verifikasi
 

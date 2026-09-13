@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr, field_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 
@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     app_debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
+    max_upload_size_mb: int = 10
+    max_multipart_body_size_mb: int = 11
+    max_pdf_pages: int = 200
+    max_extracted_characters: int = 2_000_000
+    ingestion_chunk_size: int = 500
+    ingestion_chunk_overlap: int = 100
+
     database_url: SecretStr | None = None
     database_url_unpooled: SecretStr | None = None
     neon_branch: str | None = None
@@ -72,6 +79,42 @@ class Settings(BaseSettings):
         if "?" in value or "#" in value:
             raise ValueError("API_V1_PREFIX must be a path without query or fragment")
         return value
+
+    @field_validator(
+        "max_upload_size_mb",
+        "max_multipart_body_size_mb",
+        "max_pdf_pages",
+        "max_extracted_characters",
+        "ingestion_chunk_size",
+    )
+    @classmethod
+    def validate_positive_limit(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("must be greater than zero")
+        return value
+
+    @field_validator("ingestion_chunk_overlap")
+    @classmethod
+    def validate_non_negative_overlap(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("must be non-negative")
+        return value
+
+    @model_validator(mode="after")
+    def validate_ingestion_limits(self) -> "Settings":
+        if self.max_multipart_body_size_mb <= self.max_upload_size_mb:
+            raise ValueError("MAX_MULTIPART_BODY_SIZE_MB must be greater than MAX_UPLOAD_SIZE_MB")
+        if self.ingestion_chunk_overlap >= self.ingestion_chunk_size:
+            raise ValueError("INGESTION_CHUNK_OVERLAP must be smaller than INGESTION_CHUNK_SIZE")
+        return self
+
+    @property
+    def max_upload_size_bytes(self) -> int:
+        return self.max_upload_size_mb * 1024 * 1024
+
+    @property
+    def max_multipart_body_size_bytes(self) -> int:
+        return self.max_multipart_body_size_mb * 1024 * 1024
 
     @property
     def application_url(self) -> URL:

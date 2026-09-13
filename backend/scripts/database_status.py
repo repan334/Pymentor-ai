@@ -49,6 +49,20 @@ def main() -> None:
                 revision = connection.execute(
                     text("SELECT version_num FROM alembic_version")
                 ).scalar_one_or_none()
+            document_count = connection.execute(text("SELECT count(*) FROM documents")).scalar_one()
+            chunk_count = connection.execute(
+                text("SELECT count(*) FROM document_chunks")
+            ).scalar_one()
+            document_columns = connection.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'documents'
+                    ORDER BY ordinal_position
+                    """
+                )
+            ).scalars()
 
         print(f"database={identity[0]}")
         print(f"schema={identity[1]}")
@@ -57,6 +71,9 @@ def main() -> None:
         print(f"public_tables={','.join(tables)}")
         print(f"pgvector={vector_version or 'not installed'}")
         print(f"alembic_revision={revision or 'not initialized'}")
+        print(f"documents={document_count}")
+        print(f"document_chunks={chunk_count}")
+        print(f"document_columns={','.join(document_columns)}")
     finally:
         engine.dispose()
 

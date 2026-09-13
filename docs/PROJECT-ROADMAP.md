@@ -87,11 +87,20 @@ yet been selected.
 
 ### Phase 4 — Document Ingestion
 
-- File validation.
-- PDF, Markdown, and TXT extraction.
-- Text cleaning.
-- Chunk creation.
-- Document metadata storage.
+- [x] Bounded single-file multipart upload with actual byte counting.
+- [x] UTF-8/UTF-8-BOM TXT and Markdown extraction without default normalization.
+- [x] Bounded text-based PDF extraction with page metadata.
+- [x] Character chunk creation against persisted reference text.
+- [x] Atomic document and chunk persistence.
+- [x] Concurrent-safe deduplication by file-byte hash and extraction profile.
+- [x] Paginated document/detail/chunk read endpoints.
+- [x] Local, PostgreSQL integration, and real HTTP verification.
+
+Phase 4 is complete. Successful ingestion status is `processed`: extraction and
+chunking finished, but embeddings and AI retrieval do not exist yet. Original files
+are not retained, PDF extraction is not OCR, and offsets are Python character indexes
+into persisted `reference_text`, never byte coordinates in the uploaded file. See
+`docs/DOCUMENT-INGESTION.md`.
 
 ### Phase 5 — Embedding and Retrieval
 

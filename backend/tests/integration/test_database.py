@@ -6,7 +6,7 @@ from app.db.models import Document, DocumentChunk
 from app.db.session import create_database_engine
 from sqlalchemy import insert, select, text
 
-EXPECTED_REVISION = "20260913_0001"
+EXPECTED_REVISION = "20260913_0002"
 
 pytestmark = pytest.mark.skipif(
     os.getenv("RUN_DATABASE_TESTS") != "1",
@@ -62,7 +62,10 @@ def test_document_round_trip_rolls_back_without_persisting_test_data() -> None:
                         source_name="phase-3-isolated-test.txt",
                         source_type="text",
                         checksum_sha256=checksum,
-                        status="ready",
+                        extraction_profile="text:utf-8-sig:v1",
+                        file_size_bytes=22,
+                        reference_text="isolated database test",
+                        status="processed",
                         extra_metadata={"test": True},
                     )
                 )

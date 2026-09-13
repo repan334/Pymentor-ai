@@ -110,18 +110,31 @@ OpenAPI tersedia di `http://127.0.0.1:8000/openapi.json`. Tekan `Ctrl+C` pada
 terminal server untuk menghentikannya. Health endpoint hanya memeriksa proses API;
 endpoint tersebut tidak mengakses Neon atau penyedia model.
 
-Lihat [panduan API](docs/API.md) untuk struktur, kontrak, dan pengujian Phase 2.
+Upload satu dokumen melalui Swagger UI di `http://127.0.0.1:8000/docs`, atau dari
+PowerShell 5.1 dengan executable curl bawaan Windows:
+
+```powershell
+curl.exe -X POST -F "file=@data\sample\perulangan-python.txt" http://127.0.0.1:8000/api/v1/documents
+curl.exe http://127.0.0.1:8000/api/v1/documents
+```
+
+Lihat [panduan API](docs/API.md) untuk kontrak HTTP dan
+[panduan ingestion](docs/DOCUMENT-INGESTION.md) untuk format, limit, offset,
+deduplikasi, dan keterbatasan PDF.
 
 ## Status Proyek
 
-Phase 1, Phase 2, dan Phase 3 selesai pada 13 September 2026. Phase 4 belum dimulai.
+Phase 1 sampai Phase 4 selesai pada 13 September 2026. Phase 5 belum dimulai.
 
 - Target: project `twilight-firefly-94879334`, branch `production`, database `neondb`.
 - FastAPI menyediakan `GET /api/v1/health`, `/docs`, dan `/openapi.json` tanpa
   melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
-- Alembic berada pada revision `20260913_0001`.
+- Alembic berada pada revision `20260913_0002`.
+- API ingestion mendukung UTF-8 TXT/Markdown dan PDF berbasis teks, menyimpan teks
+  acuan serta chunk secara atomik, dan mengembalikan dokumen lama untuk upload
+  identik tanpa menggandakan chunk.
 - Ekstensi pgvector aktif. Kolom embedding berdimensi tetap belum dibuat karena
   model dan dimensinya belum dipilih; keputusan itu ditunda ke Phase 5.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

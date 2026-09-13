@@ -22,7 +22,7 @@ from app.db.base import Base
 
 
 class Document(Base):
-    """Metadata for a source learning document; ingestion arrives in Phase 4."""
+    """Persisted source text and metadata for an ingested learning document."""
 
     __tablename__ = "documents"
     __table_args__ = (
@@ -31,15 +31,25 @@ class Document(Base):
             name="source_type_allowed",
         ),
         CheckConstraint(
-            "status IN ('pending', 'processing', 'ready', 'failed')",
+            "status IN ('pending', 'processing', 'processed', 'ready', 'failed')",
             name="status_allowed",
+        ),
+        CheckConstraint("file_size_bytes >= 0", name="file_size_non_negative"),
+        CheckConstraint("length(checksum_sha256) = 64", name="checksum_sha256_length"),
+        UniqueConstraint(
+            "checksum_sha256",
+            "extraction_profile",
+            name="uq_documents_checksum_extraction_profile",
         ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     source_name: Mapped[str] = mapped_column(String(255), nullable=False)
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    checksum_sha256: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    extraction_profile: Mapped[str] = mapped_column(String(80), nullable=False)
+    file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    reference_text: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

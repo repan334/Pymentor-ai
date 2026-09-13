@@ -4,8 +4,9 @@
 
 Phase 1 provides a small, dependency-free text-processing foundation for learning
 materials. It supports UTF-8 TXT loading, optional conservative normalization,
-validated character-window chunking, source metadata, and explicit errors. PDF and
-Markdown extraction remain Phase 4 work.
+validated character-window chunking, source metadata, and explicit errors. Phase 4
+adds a separate in-memory upload dispatcher for TXT, Markdown, and text-based PDF;
+the Phase 1 `load_text_file()` filesystem contract remains unchanged.
 
 ## Processing flow
 
@@ -53,6 +54,16 @@ Only `.txt` files are accepted in Phase 1, case-insensitively. Missing files,
 directories, permission failures, and invalid UTF-8 retain their standard Python
 exception types and details. Invalid argument types and invalid chunk settings raise
 explicit `TypeError` or `ValueError` messages.
+
+## Phase 4 ingestion reuse
+
+The upload dispatcher decodes `.txt` and `.md` with `utf-8-sig` and feeds their exact
+decoded text to the existing `TextChunker`. Markdown syntax, code fences, indentation,
+and newline spelling are retained. PDF page text is extracted by pypdf, joined into a
+persisted document reference with an explicit page separator, then each page is
+chunked separately. All stored offsets are document-global Python character indexes
+into that persisted reference. They are neither upload byte offsets nor coordinates
+inside the original PDF object streams.
 
 ## Verification
 
