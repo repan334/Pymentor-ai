@@ -4,7 +4,12 @@ version = "0.1.0"
 description = "Adaptive AI tutor for learning Python using RAG."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.16,<2.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "pydantic-settings>=2.10,<3.0",
+    "sqlalchemy>=2.0,<3.0",
+]
 
 [dependency-groups]
 dev = [
@@ -27,6 +32,9 @@ indent-style = "space"
 [tool.pytest.ini_options]
 pythonpath = ["backend"]
 testpaths = ["backend/tests"]
+markers = [
+    "integration: exercises the configured remote database",
+]
 
 [tool.coverage.run]
 source = ["backend/app"]

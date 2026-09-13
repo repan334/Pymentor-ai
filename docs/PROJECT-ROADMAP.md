@@ -65,12 +65,20 @@ rewrites can alter multiline string content. See `docs/TEXT-PROCESSING.md`.
 
 ### Phase 3 — PostgreSQL and pgvector
 
-- Create Neon PostgreSQL project.
-- Enable pgvector.
-- Configure SQLAlchemy.
-- Configure Alembic migrations.
-- Create initial relational schema.
-- Test database connection.
+- [x] Create and verify Neon PostgreSQL project `twilight-firefly-94879334`.
+- [x] Pin and verify branch `production` and database `neondb`.
+- [x] Load pooled/direct database configuration from environment or dotenv files.
+- [x] Configure SQLAlchemy 2 with Psycopg 3 while preserving Neon TLS parameters.
+- [x] Configure Alembic to use the direct connection for migrations.
+- [x] Enable pgvector through tracked revision `20260913_0001`.
+- [x] Create the initial `documents` and `document_chunks` relational schema.
+- [x] Test the real database connection, migration state, and rollback-isolated writes.
+
+Phase 3 was verified against the selected production branch on 2026-09-13. The
+database is at Alembic head `20260913_0001`, pgvector `0.8.6` is available, and no
+schema drift is reported. A fixed-dimension embedding column is intentionally
+deferred to Phase 5 because the embedding model and its output dimension have not
+yet been selected.
 
 ### Phase 4 — Document Ingestion
 
