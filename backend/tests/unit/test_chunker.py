@@ -1,5 +1,4 @@
 import pytest
-
 from app.text_processing.chunker import TextChunker
 
 
@@ -65,6 +64,18 @@ def test_chunker_preserves_exact_source_slices() -> None:
     )
 
 
+def test_chunk_offsets_are_character_positions_not_utf8_byte_positions() -> None:
+    text = "A😀BC"
+
+    chunks = TextChunker(chunk_size=2, overlap=0).split(text)
+
+    assert chunks[0].content == "A😀"
+    assert (chunks[0].start_char, chunks[0].end_char) == (0, 2)
+    assert len(chunks[0].content.encode("utf-8")) == 5
+    assert chunks[1].content == "BC"
+    assert (chunks[1].start_char, chunks[1].end_char) == (2, 4)
+
+
 def test_chunker_keeps_metadata_independent() -> None:
     metadata = {"page": 3}
     chunks = TextChunker(chunk_size=5, overlap=2).split("ABCDEFGHIJK", metadata)
@@ -112,3 +123,9 @@ def test_chunker_handles_maximum_allowed_overlap() -> None:
     chunks = TextChunker(chunk_size=3, overlap=2).split("ABCDE")
 
     assert [chunk.content for chunk in chunks] == ["ABC", "BCD", "CDE"]
+
+
+def test_chunker_with_single_character_windows_terminates() -> None:
+    chunks = TextChunker(chunk_size=1, overlap=0).split("ABC")
+
+    assert [chunk.content for chunk in chunks] == ["A", "B", "C"]

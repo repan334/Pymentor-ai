@@ -11,6 +11,21 @@ def test_normalize_text_preserves_python_indentation() -> None:
     assert result == expected
 
 
+def test_normalize_text_preserves_internal_spaces_and_tabs() -> None:
+    raw_text = "value = 'A  B\tC'\n\tprint(value)"
+
+    assert normalize_text(raw_text) == raw_text
+
+
+def test_normalize_text_can_change_multiline_string_whitespace() -> None:
+    raw_text = 'message = """Line with spaces  \n\n\nNext line"""'
+
+    result = normalize_text(raw_text)
+
+    assert result == 'message = """Line with spaces\n\nNext line"""'
+    assert result != raw_text
+
+
 def test_normalize_text_standardizes_line_endings() -> None:
     raw_text = "Line one\r\nLine two\rLine three"
 

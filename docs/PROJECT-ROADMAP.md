@@ -42,12 +42,17 @@ The first version supports:
 
 ### Phase 1 — Python Foundations
 
-- Functions and type hints.
-- Classes and data structures.
-- File processing.
-- Exception handling.
-- Unit testing.
-- Text chunker exercise.
+- [x] Functions and type hints.
+- [x] Classes and validated data structures.
+- [x] Conservative UTF-8 TXT file processing.
+- [x] Explicit input and file error behavior.
+- [x] Unit testing for normalization, offsets, metadata, and edge cases.
+- [x] Fixed-size character chunker exercise with validated overlap.
+
+Phase 1 is complete. Chunk coordinates are Python character positions in the exact
+text representation passed to the chunker, not byte positions. Optional
+normalization is disabled by default for code-like material because whitespace
+rewrites can alter multiline string content. See `docs/TEXT-PROCESSING.md`.
 
 ### Phase 2 — FastAPI Foundation
 
@@ -160,8 +165,8 @@ The project is complete when:
 - [x] 1.1 Text normalization and unit tests.
 - [x] 1.2 TextChunk validation and unit tests.
 - [x] 1.3 Fixed-size character chunking with overlap.
-- [ ] 1.4 File processing and integrated edge cases.
-- [ ] 1.5 Final Phase 1 quality gate.
+- [x] 1.4 File processing and integrated edge cases.
+- [x] 1.5 Final Phase 1 quality gate.
 
 Chunk offsets refer to the exact input passed to TextChunker.split().
 Character-based chunking is a baseline, not token-aware or syntax-aware.

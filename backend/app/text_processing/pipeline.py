@@ -9,7 +9,7 @@ from app.text_processing.normalizer import normalize_text
 
 @dataclass(frozen=True, slots=True)
 class ProcessedDocument:
-    """The source text, processing result, and its generated chunks."""
+    """Raw source, selected reference text, and chunks addressed within that text."""
 
     source_name: str
     source_text: str
@@ -24,7 +24,12 @@ def process_text_file(
     chunker: TextChunker,
     normalize: bool = False,
 ) -> ProcessedDocument:
-    """Read a TXT file and split its selected text representation."""
+    """Read a TXT file and chunk raw text unless normalization is explicitly enabled.
+
+    Chunk offsets always address ``processed_text``. With the conservative default,
+    ``processed_text`` is exactly ``source_text``; after normalization it is a
+    distinct coordinate space.
+    """
     if not isinstance(chunker, TextChunker):
         raise TypeError("chunker must be a TextChunker")
 

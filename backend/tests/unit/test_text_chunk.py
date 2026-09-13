@@ -1,7 +1,7 @@
-import pytest
-
-from app.text_processing.models import TextChunk
 from dataclasses import FrozenInstanceError
+
+import pytest
+from app.text_processing.models import TextChunk
 
 
 def test_text_chunk_stores_valid_data() -> None:

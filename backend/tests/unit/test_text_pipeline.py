@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from app.text_processing.chunker import TextChunker
 from app.text_processing.loader import load_text_file
 from app.text_processing.pipeline import process_text_file
@@ -63,6 +62,10 @@ def test_pipeline_preserves_code_by_default(tmp_path: Path) -> None:
     assert result.normalization_applied is False
     assert len(result.chunks) == 1
     assert result.chunks[0].content == text
+    assert result.chunks[0].metadata == {
+        "source": "code.txt",
+        "normalized": False,
+    }
 
 
 def test_pipeline_normalizes_prose_and_preserves_source(tmp_path: Path) -> None:
@@ -88,6 +91,47 @@ def test_pipeline_normalizes_prose_and_preserves_source(tmp_path: Path) -> None:
             "source": "lesson.txt",
             "normalized": True,
         }
+
+
+def test_normalized_chunk_offsets_reference_processed_not_source_text(tmp_path: Path) -> None:
+    path = tmp_path / "lesson.txt"
+    source_text = "A  \r\n\r\n\r\nB"
+    path.write_bytes(source_text.encode("utf-8"))
+
+    result = process_text_file(
+        path,
+        chunker=TextChunker(chunk_size=2, overlap=0),
+        normalize=True,
+    )
+
+    assert result.processed_text == "A\n\nB"
+    assert all(
+        chunk.content == result.processed_text[chunk.start_char : chunk.end_char]
+        for chunk in result.chunks
+    )
+    assert any(
+        chunk.content != result.source_text[chunk.start_char : chunk.end_char]
+        for chunk in result.chunks
+    )
+
+
+@pytest.mark.parametrize("normalize", [False, True])
+def test_pipeline_returns_no_chunks_for_whitespace_only_file(
+    tmp_path: Path,
+    normalize: bool,
+) -> None:
+    path = tmp_path / "whitespace.txt"
+    source_text = " \t\r\n  "
+    path.write_bytes(source_text.encode("utf-8"))
+
+    result = process_text_file(
+        path,
+        chunker=TextChunker(chunk_size=2, overlap=1),
+        normalize=normalize,
+    )
+
+    assert result.source_text == source_text
+    assert result.chunks == ()
 
 
 @pytest.mark.parametrize("normalize", [False, True])

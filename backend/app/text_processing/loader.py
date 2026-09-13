@@ -2,7 +2,11 @@ from pathlib import Path
 
 
 def load_text_file(path: str | Path) -> str:
-    """Read a UTF-8 TXT file without translating its line endings."""
+    """Read UTF-8 or UTF-8-with-BOM TXT without translating line endings.
+
+    Filesystem and decoding exceptions intentionally propagate so callers retain
+    the failing path, codec details, and original exception type.
+    """
     if not isinstance(path, (str, Path)):
         raise TypeError("path must be a string or Path")
 

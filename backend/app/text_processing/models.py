@@ -5,7 +5,11 @@ MetadataValue = str | int | float | bool | None
 
 @dataclass(frozen=True, slots=True)
 class TextChunk:
-    """A validated slice of text; offsets refer to the chunker's input."""
+    """A validated source slice addressed by Python character indexes.
+
+    The offsets refer to the exact string passed to the chunker. They are not byte
+    positions and, after normalization, do not refer to the original raw text.
+    """
 
     content: str
     index: int

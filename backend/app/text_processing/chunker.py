@@ -5,7 +5,12 @@ from app.text_processing.models import MetadataValue, TextChunk
 
 @dataclass(frozen=True, slots=True)
 class TextChunker:
-    """Split text into fixed-size character windows with overlap."""
+    """Split text into fixed-size character windows with overlap.
+
+    Empty input produces no chunks, and whitespace-only windows are skipped without
+    changing offsets of later chunks. Validation guarantees a positive step, so the
+    loop always advances.
+    """
 
     chunk_size: int = 500
     overlap: int = 100
@@ -35,6 +40,7 @@ class TextChunker:
         chunks: list[TextChunk] = []
         start = 0
         text_length = len(text)
+        step = self.chunk_size - self.overlap
 
         while start < text_length:
             end = min(start + self.chunk_size, text_length)
@@ -54,6 +60,6 @@ class TextChunker:
             if end == text_length:
                 break
 
-            start = end - self.overlap
+            start += step
 
         return chunks
