@@ -1,0 +1,6 @@
+Python adalah bahasa pemrograman yang dapat digunakan untuk membangun aplikasi.
+
+Function mengelompokkan instruksi agar dapat digunakan kembali.
+
+Parameter adalah nama yang menerima nilai dalam definisi function.
+Argument adalah nilai yang diberikan ketika function dipanggil.
