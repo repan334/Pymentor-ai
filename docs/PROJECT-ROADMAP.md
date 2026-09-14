@@ -128,13 +128,17 @@ answer is present. See `docs/EMBEDDINGS-AND-RETRIEVAL.md`.
 - [x] Backend-owned source IDs, excerpts, offsets, metadata, and citation markers.
 - [x] Explicit unsupported-question behavior without a provider call for empty corpus.
 - [x] Deterministic API/unit verification and PostgreSQL retrieval-to-citation verification.
-- [ ] Live `gemini-2.5-flash` and HTTP end-to-end verification (provider returned HTTP 404
-  for the configured key/project on 2026-09-14; no fallback model was selected).
+- [x] Live chat and HTTP end-to-end verification with replacement model
+  `gemini-3.6-flash`.
 
-Phase 6 implementation is complete, but external chat verification is pending. The
-endpoint handles one standalone question and stores no history. Grounding validation
-prevents invented source metadata and out-of-context IDs, but semantic support and
-insufficient-context classification remain probabilistic model judgments. See
+The original `gemini-2.5-flash` returned a provider message saying it was unavailable
+to new users, so the free-tier stable model `gemini-3.6-flash` was selected without
+changing embeddings. Generation minimal, structured output, serta RAG live untuk
+jawaban didukung, pertanyaan di luar materi, dan prompt injection telah diverifikasi.
+Endpoint menangani satu pertanyaan mandiri dan tidak menyimpan riwayat. Validasi
+grounding menolak metadata sumber rekaan dan ID di luar konteks, tetapi dukungan
+semantik serta klasifikasi konteks tidak cukup tetap merupakan penilaian model yang
+probabilistik. Lihat
 `docs/RAG-TUTOR.md`.
 
 ### Phase 7 — Quiz Engine

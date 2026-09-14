@@ -153,8 +153,9 @@ pemisahan error, batas konteks, dan keterbatasan grounding.
 ## Status Proyek
 
 Phase 1 sampai Phase 5 selesai dan telah diverifikasi pada 14 September 2026.
-Implementasi serta verifikasi lokal/database Phase 6 selesai; verifikasi chat live
-masih tertunda karena model target mengembalikan HTTP 404 untuk key/project lokal.
+Implementasi serta verifikasi lokal/database/live Phase 6 selesai. Model chat
+dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
+`gemini-3.6-flash`; embedding dan indeks tidak berubah.
 
 - Target: project `twilight-firefly-94879334`, branch `production`, database `neondb`.
 - FastAPI menyediakan `GET /api/v1/health`, `/docs`, dan `/openapi.json` tanpa

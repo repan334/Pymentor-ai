@@ -42,7 +42,7 @@ class TransactionCheckingEmbedding:
 
 
 class TransactionCheckingChat:
-    profile = "gemini:gemini-2.5-flash:grounded-tutor-v1"
+    profile = "gemini:gemini-3.6-flash:grounded-tutor-v2"
 
     def __init__(self, session: Session) -> None:
         self.session = session

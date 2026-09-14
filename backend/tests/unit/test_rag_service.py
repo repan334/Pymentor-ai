@@ -37,7 +37,7 @@ class FakeSearchService:
 
 
 class FakeChatAdapter:
-    profile = "gemini:gemini-2.5-flash:grounded-tutor-v1"
+    profile = "gemini:gemini-3.6-flash:grounded-tutor-v2"
 
     def __init__(self, output: ModelTutorOutput) -> None:
         self.output = output

@@ -7,8 +7,8 @@ Phase 6 memakai profil chat tunggal yang tervalidasi:
 | Setting | Default |
 | --- | --- |
 | `LLM_PROVIDER` | `gemini` |
-| `LLM_MODEL` | `gemini-2.5-flash` |
-| `LLM_PROMPT_VERSION` | `grounded-tutor-v1` |
+| `LLM_MODEL` | `gemini-3.6-flash` |
+| `LLM_PROMPT_VERSION` | `grounded-tutor-v2` |
 | `GEMINI_API_VERSION` | `v1beta` |
 | `CHAT_MAX_QUESTION_CHARACTERS` | `2000` |
 | `CHAT_MAX_DOCUMENT_IDS` | `100` |
@@ -182,8 +182,12 @@ uv run pytest -q backend\tests\integration\test_rag_live_api.py
 Remove-Item Env:\RUN_LIVE_RAG_TESTS
 ```
 
-Pada verifikasi 14 September 2026, key lokal dan embedding tetap berfungsi, tetapi
-request generation minimal ke `gemini-2.5-flash` mengembalikan HTTP 404. Delapan
-percobaan generation awal dihentikan tanpa retry, penggantian model, atau aktivasi
-billing. Karena itu smoke chat, RAG live, dan HTTP end-to-end tetap tertunda sampai
-model target tersedia untuk project/key yang sama.
+Pada verifikasi 14 September 2026, Models API masih mencantumkan
+`gemini-2.5-flash`, tetapi generation mengembalikan HTTP 404 dengan keterangan bahwa
+model tersebut tidak lagi tersedia bagi pengguna baru. Profil chat dipindahkan ke
+model stabil `gemini-3.6-flash` yang direkomendasikan respons provider dan tersedia
+pada free tier. Generation minimal, structured output, serta fixture RAG untuk
+pertanyaan didukung/tidak didukung/prompt injection kemudian lulus. Prompt tutor
+`grounded-tutor-v2` menegaskan bahwa permintaan untuk mengikuti instruksi di dalam
+sumber harus ditolak sebagai konteks tidak cukup. Model embedding dan vector yang
+sudah tersimpan tidak berubah.

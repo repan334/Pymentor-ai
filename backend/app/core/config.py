@@ -73,8 +73,8 @@ class Settings(BaseSettings):
     max_search_document_ids: int = 100
 
     llm_provider: str = "gemini"
-    llm_model: str = "gemini-2.5-flash"
-    llm_prompt_version: str = "grounded-tutor-v1"
+    llm_model: str = "gemini-3.6-flash"
+    llm_prompt_version: str = "grounded-tutor-v2"
     chat_request_timeout_seconds: int = 45
     chat_max_attempts: int = 2
     chat_retry_base_seconds: float = 0.5
@@ -195,10 +195,10 @@ class Settings(BaseSettings):
             raise ValueError("GEMINI_API_VERSION must be 'v1beta' for the configured Developer API")
         if self.llm_provider != "gemini":
             raise ValueError("LLM_PROVIDER must be 'gemini' in the Phase 6 profile")
-        if self.llm_model != "gemini-2.5-flash":
-            raise ValueError("LLM_MODEL must be 'gemini-2.5-flash' in the Phase 6 profile")
-        if self.llm_prompt_version != "grounded-tutor-v1":
-            raise ValueError("LLM_PROMPT_VERSION must be 'grounded-tutor-v1'")
+        if self.llm_model != "gemini-3.6-flash":
+            raise ValueError("LLM_MODEL must be 'gemini-3.6-flash' in the active chat profile")
+        if self.llm_prompt_version != "grounded-tutor-v2":
+            raise ValueError("LLM_PROMPT_VERSION must be 'grounded-tutor-v2'")
         if self.chat_max_context_chunk_characters > self.chat_max_context_characters:
             raise ValueError(
                 "CHAT_MAX_CONTEXT_CHUNK_CHARACTERS must not exceed CHAT_MAX_CONTEXT_CHARACTERS"

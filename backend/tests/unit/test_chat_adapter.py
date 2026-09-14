@@ -96,7 +96,7 @@ def test_adapter_uses_structured_output_bounded_thinking_and_no_tools() -> None:
     assert result == output
     call = client.models.calls[0]
     config = call["config"]
-    assert call["model"] == "gemini-2.5-flash"
+    assert call["model"] == "gemini-3.6-flash"
     assert config.response_mime_type == "application/json"
     assert config.response_schema == _provider_response_schema()
     assert config.response_json_schema is None
