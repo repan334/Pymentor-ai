@@ -150,10 +150,23 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/chat" -Content
 Lihat [panduan Grounded RAG Tutor](docs/RAG-TUTOR.md) untuk kontrak sitasi,
 pemisahan error, batas konteks, dan keterbatasan grounding.
 
+Quiz dibuat dari dokumen yang sudah `indexing_status=ready`. Respons create/get
+menyembunyikan kunci; kunci, explanation, dan sumber baru dibuka setelah semua soal
+disubmit dengan idempotency key:
+
+```powershell
+$quizBody = @{ topic = "fungsi Python"; document_ids = @($documentId); question_count = 1 } | ConvertTo-Json
+$quiz = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/quizzes" -ContentType "application/json" -Body $quizBody
+```
+
+Lihat [panduan quiz](docs/QUIZZES.md) untuk submit/replay dan
+[laporan evaluasi model](docs/MODEL-EVALUATION.md) untuk denominator serta batasan
+hasil aktual.
+
 ## Status Proyek
 
-Phase 1 sampai Phase 5 selesai dan telah diverifikasi pada 14 September 2026.
-Implementasi serta verifikasi lokal/database/live Phase 6 selesai. Model chat
+Phase 1 sampai Phase 6 selesai dan telah diverifikasi pada 14 September 2026.
+Model chat
 dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
 `gemini-3.6-flash`; embedding dan indeks tidak berubah.
 
@@ -162,7 +175,7 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
-- Alembic berada pada revision `20260913_0003`.
+- Alembic berada pada revision `20260914_0004`.
 - API ingestion mendukung UTF-8 TXT/Markdown dan PDF berbasis teks, menyimpan teks
   acuan serta chunk secara atomik, dan mengembalikan dokumen lama untuk upload
   identik tanpa menggandakan chunk.
@@ -172,4 +185,7 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
 - `POST /api/v1/chat` membangun konteks berbatas, memakai instruksi tutor berversi,
   memvalidasi structured output, dan merakit sitasi hanya dari chunk yang benar-benar
   dikirim. Model embedding serta data yang sudah diindeks tidak diubah.
+- Implementasi quiz Phase 7, persistence Neon, race idempotency, dan HTTP live
+  create/get/submit/result/replay lulus. Evaluasi RAG eksternal masih parsial karena
+  kuota: 6 request sukses, 1 error kuota, dan 9/16 kasus belum dijalankan.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

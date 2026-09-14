@@ -3,12 +3,12 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from copy import deepcopy
-from typing import Any
+from typing import Any, TypeVar
 
 import httpx
 from google import genai
 from google.genai import errors, types
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.chat.models import (
     ChatAuthenticationError,
@@ -20,11 +20,14 @@ from app.chat.models import (
     ChatTimeoutError,
     ChatTruncatedError,
     ChatUnavailableError,
+    GenerationUsage,
     ModelTutorOutput,
     TutorSource,
 )
 from app.chat.prompt import TUTOR_SYSTEM_INSTRUCTION, build_user_prompt
 from app.core.config import Settings
+
+StructuredModel = TypeVar("StructuredModel", bound=BaseModel)
 
 
 class GeminiChatAdapter:
@@ -40,6 +43,7 @@ class GeminiChatAdapter:
         self._settings = settings
         self._client = client
         self._sleep = sleep
+        self.last_usage: GenerationUsage | None = None
 
     @property
     def profile(self) -> str:
@@ -72,30 +76,65 @@ class GeminiChatAdapter:
         question: str,
         sources: Sequence[TutorSource],
     ) -> ModelTutorOutput:
-        prompt = build_user_prompt(question, sources)
-        response = self._call_with_retry(prompt)
-        return _parse_response(response)
+        return self.generate_structured(
+            prompt=build_user_prompt(question, sources),
+            system_instruction=TUTOR_SYSTEM_INSTRUCTION,
+            response_model=ModelTutorOutput,
+        )
 
-    def _call_with_retry(self, prompt: str) -> Any:
+    def generate_structured(
+        self,
+        *,
+        prompt: str,
+        system_instruction: str,
+        response_model: type[StructuredModel],
+        max_output_tokens: int | None = None,
+        thinking_budget: int | None = None,
+        temperature: float | None = None,
+    ) -> StructuredModel:
+        response, attempts = self._call_with_retry(
+            prompt,
+            system_instruction=system_instruction,
+            response_model=response_model,
+            max_output_tokens=max_output_tokens or self._settings.chat_max_output_tokens,
+            thinking_budget=(
+                self._settings.chat_thinking_budget if thinking_budget is None else thinking_budget
+            ),
+            temperature=self._settings.chat_temperature if temperature is None else temperature,
+        )
+        self.last_usage = _usage_from_response(response, attempts)
+        return _parse_response(response, response_model)
+
+    def _call_with_retry(
+        self,
+        prompt: str,
+        *,
+        system_instruction: str,
+        response_model: type[BaseModel],
+        max_output_tokens: int,
+        thinking_budget: int,
+        temperature: float,
+    ) -> tuple[Any, int]:
         last_error: Exception | None = None
         for attempt in range(1, self._settings.chat_max_attempts + 1):
             try:
-                return self._get_client().models.generate_content(
+                response = self._get_client().models.generate_content(
                     model=self._settings.llm_model,
                     contents=types.Content(role="user", parts=[types.Part(text=prompt)]),
                     config=types.GenerateContentConfig(
-                        system_instruction=TUTOR_SYSTEM_INSTRUCTION,
-                        temperature=self._settings.chat_temperature,
-                        max_output_tokens=self._settings.chat_max_output_tokens,
+                        system_instruction=system_instruction,
+                        temperature=temperature,
+                        max_output_tokens=max_output_tokens,
                         thinking_config=types.ThinkingConfig(
-                            thinking_budget=self._settings.chat_thinking_budget,
+                            thinking_budget=thinking_budget,
                             include_thoughts=False,
                         ),
                         response_mime_type="application/json",
-                        response_schema=_provider_response_schema(),
+                        response_schema=_provider_response_schema(response_model),
                         candidate_count=1,
                     ),
                 )
+                return response, attempt
             except Exception as exc:
                 translated, retryable = _translate_provider_error(exc)
                 last_error = translated
@@ -106,7 +145,7 @@ class GeminiChatAdapter:
         raise ChatUnavailableError("Chat provider call failed") from last_error
 
 
-def _parse_response(response: Any) -> ModelTutorOutput:
+def _parse_response(response: Any, response_model: type[StructuredModel]) -> StructuredModel:
     feedback = getattr(response, "prompt_feedback", None)
     block_reason = getattr(feedback, "block_reason", None) if feedback is not None else None
     if block_reason not in {None, types.BlockedReason.BLOCKED_REASON_UNSPECIFIED}:
@@ -133,11 +172,11 @@ def _parse_response(response: Any) -> ModelTutorOutput:
     try:
         parts = getattr(getattr(candidates[0], "content", None), "parts", None)
         if parts:
-            return ModelTutorOutput.model_validate_json(_candidate_text(candidates[0]))
+            return response_model.model_validate_json(_candidate_text(candidates[0]))
         parsed = getattr(response, "parsed", None)
-        if isinstance(parsed, ModelTutorOutput):
+        if isinstance(parsed, response_model):
             return parsed
-        return ModelTutorOutput.model_validate(parsed)
+        return response_model.model_validate(parsed)
     except (ValidationError, ValueError, TypeError) as exc:
         raise ChatOutputInvalidError("Gemini returned malformed structured output") from exc
 
@@ -153,8 +192,10 @@ def _candidate_text(candidate: Any) -> str:
     return text
 
 
-def _provider_response_schema() -> dict[str, Any]:
-    schema = deepcopy(ModelTutorOutput.model_json_schema())
+def _provider_response_schema(
+    response_model: type[BaseModel] = ModelTutorOutput,
+) -> dict[str, Any]:
+    schema = deepcopy(response_model.model_json_schema())
 
     def remove_unsupported(value: Any) -> None:
         if isinstance(value, dict):
@@ -167,6 +208,17 @@ def _provider_response_schema() -> dict[str, Any]:
 
     remove_unsupported(schema)
     return schema
+
+
+def _usage_from_response(response: Any, attempts: int) -> GenerationUsage:
+    usage = getattr(response, "usage_metadata", None)
+    return GenerationUsage(
+        model_version=getattr(response, "model_version", None),
+        prompt_tokens=getattr(usage, "prompt_token_count", None),
+        output_tokens=getattr(usage, "candidates_token_count", None),
+        thinking_tokens=getattr(usage, "thoughts_token_count", None),
+        attempts=attempts,
+    )
 
 
 def _translate_provider_error(exc: Exception) -> tuple[Exception, bool]:

@@ -65,6 +65,24 @@ Tidak ada HNSW/IVFFlat pada Phase 5. Query memakai exact cosine scan dengan oper
 pgvector dan urutan `cosine_distance`, lalu `chunk_id` sebagai tie-break deterministik.
 Vector dari profil berbeda tidak pernah dicampur.
 
+Revision `20260914_0004` menambahkan snapshot quiz tanpa mengubah tabel dokumen atau
+vector:
+
+- `quizzes`: topik, scope document ID, jumlah soal, serta profil model/prompt;
+- `quiz_questions`, `quiz_options`, dan `quiz_question_sources`: soal, empat opsi,
+  kunci server-side, explanation, dan snapshot sumber yang tetap stabil;
+- `quiz_attempts` dan `quiz_attempt_answers`: nilai, payload hash idempotency, pilihan,
+  serta hasil benar/salah per soal;
+- unique constraint `(quiz_id, idempotency_key)` untuk race submission dan partial
+  unique index yang mencegah lebih dari satu opsi bertanda benar per soal.
+
+Generation selesai sebelum transaksi insert dimulai. Seluruh snapshot quiz disimpan
+atomik; attempt juga memakai transaksi singkat. API tetap memvalidasi tepat empat opsi,
+tepat satu kunci, kepemilikan soal/opsi, serta semua soal terjawab. Snapshot sumber
+sengaja tidak memakai foreign key ke dokumen/chunk agar review attempt lama tidak
+berubah bila lifecycle materi berkembang. Tidak ada data pengguna yang diubah,
+diindeks ulang, atau dihapus oleh revision ini.
+
 ## Alur migrasi aman
 
 Tinjau revision dan SQL sebelum menerapkan perubahan:
@@ -89,6 +107,8 @@ status indexing, jadi juga bersifat kehilangan data hasil indexing. Downgrade `0
 satu checksum telah tersimpan dengan beberapa extraction profile, karena skema lama
 hanya mengizinkan satu checksum. Extension `vector` sengaja tidak dihapus oleh
 downgrade karena mungkin dipakai object lain di database.
+Downgrade `0004` menghapus seluruh quiz dan attempt, sehingga juga tidak boleh
+dijalankan pada data pengguna tanpa backup/rencana pemulihan.
 
 ## Verifikasi
 

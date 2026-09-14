@@ -33,6 +33,15 @@ class TutorSource:
     page_number: int | None
 
 
+@dataclass(frozen=True, slots=True)
+class GenerationUsage:
+    model_version: str | None
+    prompt_tokens: int | None
+    output_tokens: int | None
+    thinking_tokens: int | None
+    attempts: int
+
+
 class ChatError(RuntimeError):
     code = "chat_generation_failed"
 

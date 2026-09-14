@@ -1,0 +1,17 @@
+{
+  "version": "rag-eval-v1",
+  "frozen_at": "2026-09-14T00:00:00+07:00",
+  "model": "gemini-3.6-flash",
+  "embedding_profile": "gemini:gemini-embedding-2:768:retrieval-asymmetric-v1",
+  "tutor_prompt_version": "grounded-tutor-v2",
+  "tutor_prompt_sha256": "8850338d4982ea451bf69e91c1d4686290f3501902b36f56c4ee1677b1982040",
+  "development_sha256": "0e86f164f7b9aa1da1980592f7d78703afdc8fd478f82ebabd400b205bbb88f8",
+  "holdout_sha256": "565a6ef2ee3a73c8836df02aacdacac4e6ebd23e75833ef60f856a78c348cff8",
+  "corpus": {
+    "collections.md": "941a8675f9e41540ecdeebd89e8981876226ef9923aaf141e1fc2fa70e7e5484",
+    "exceptions.md": "0ab9a38a7204664ed225545d37b4a2f67b6c1ec319a380ed7ce9479bfd6d8160",
+    "functions.md": "10537d306b67a998e85bb286e863fc36e3ae3828a192271c0897f7c163e49f56",
+    "loops.md": "da1a3a7e8b328d91e9180364d8f938340b7b28139b4e3bf0290e958a2f2ea4d5"
+  },
+  "holdout_policy": "The holdout was authored by the implementer, is not blind, and becomes development-used after its first review."
+}

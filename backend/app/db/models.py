@@ -1,15 +1,18 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Identity,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -157,3 +160,189 @@ class DocumentChunk(Base):
     )
 
     document: Mapped[Document] = relationship(back_populates="chunks")
+
+
+class Quiz(Base):
+    """Immutable generated quiz snapshot; answers stay server-side until submission."""
+
+    __tablename__ = "quizzes"
+    __table_args__ = (
+        CheckConstraint("question_count BETWEEN 1 AND 5", name="quiz_question_count_range"),
+        CheckConstraint("length(btrim(topic)) > 0", name="quiz_topic_not_blank"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    question_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    document_ids: Mapped[list[int] | None] = mapped_column(JSONB)
+    llm_provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    llm_model: Mapped[str] = mapped_column(String(120), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    generation_profile: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    questions: Mapped[list["QuizQuestion"]] = relationship(
+        back_populates="quiz",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="QuizQuestion.question_index",
+    )
+    attempts: Mapped[list["QuizAttempt"]] = relationship(
+        back_populates="quiz", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+    __table_args__ = (
+        UniqueConstraint("quiz_id", "question_index", name="uq_quiz_questions_quiz_index"),
+        CheckConstraint("question_index >= 0", name="quiz_question_index_non_negative"),
+        CheckConstraint("length(btrim(prompt)) > 0", name="quiz_question_prompt_not_blank"),
+        CheckConstraint(
+            "length(btrim(explanation)) > 0", name="quiz_question_explanation_not_blank"
+        ),
+        Index("ix_quiz_questions_quiz_id", "quiz_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    quiz_id: Mapped[int] = mapped_column(
+        ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False
+    )
+    question_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+
+    quiz: Mapped[Quiz] = relationship(back_populates="questions")
+    options: Mapped[list["QuizOption"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="QuizOption.option_index",
+    )
+    sources: Mapped[list["QuizQuestionSource"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="QuizQuestionSource.reference_id",
+    )
+
+
+class QuizOption(Base):
+    __tablename__ = "quiz_options"
+    __table_args__ = (
+        UniqueConstraint("question_id", "option_index", name="uq_quiz_options_question_index"),
+        CheckConstraint("option_index BETWEEN 0 AND 3", name="quiz_option_index_range"),
+        CheckConstraint("length(btrim(text)) > 0", name="quiz_option_text_not_blank"),
+        Index(
+            "uq_quiz_options_one_correct",
+            "question_id",
+            unique=True,
+            postgresql_where=text("is_correct"),
+        ),
+        Index("ix_quiz_options_question_id", "question_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_questions.id", ondelete="CASCADE"), nullable=False
+    )
+    option_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    question: Mapped[QuizQuestion] = relationship(back_populates="options")
+
+
+class QuizQuestionSource(Base):
+    __tablename__ = "quiz_question_sources"
+    __table_args__ = (
+        UniqueConstraint(
+            "question_id", "reference_id", name="uq_quiz_question_sources_question_reference"
+        ),
+        UniqueConstraint("question_id", "chunk_id", name="uq_quiz_question_sources_question_chunk"),
+        CheckConstraint("start_char >= 0", name="quiz_source_start_char_non_negative"),
+        CheckConstraint("end_char > start_char", name="quiz_source_valid_character_range"),
+        CheckConstraint("page_number IS NULL OR page_number > 0", name="quiz_source_page_positive"),
+        Index("ix_quiz_question_sources_question_id", "question_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_questions.id", ondelete="CASCADE"), nullable=False
+    )
+    reference_id: Mapped[str] = mapped_column(String(16), nullable=False)
+    document_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chunk_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    start_char: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_char: Mapped[int] = mapped_column(Integer, nullable=False)
+    excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    extra_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    question: Mapped[QuizQuestion] = relationship(back_populates="sources")
+
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+    __table_args__ = (
+        UniqueConstraint("quiz_id", "idempotency_key", name="uq_quiz_attempts_quiz_key"),
+        CheckConstraint("correct_count >= 0", name="quiz_attempt_correct_non_negative"),
+        CheckConstraint("total_questions > 0", name="quiz_attempt_total_positive"),
+        CheckConstraint(
+            "correct_count <= total_questions", name="quiz_attempt_correct_not_over_total"
+        ),
+        CheckConstraint(
+            "percentage >= 0 AND percentage <= 100", name="quiz_attempt_percentage_range"
+        ),
+        CheckConstraint("length(payload_sha256) = 64", name="quiz_attempt_payload_hash_length"),
+        Index("ix_quiz_attempts_quiz_id", "quiz_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    quiz_id: Mapped[int] = mapped_column(
+        ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(100), nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    correct_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_questions: Mapped[int] = mapped_column(Integer, nullable=False)
+    percentage: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    quiz: Mapped[Quiz] = relationship(back_populates="attempts")
+    answers: Mapped[list["QuizAttemptAnswer"]] = relationship(
+        back_populates="attempt",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class QuizAttemptAnswer(Base):
+    __tablename__ = "quiz_attempt_answers"
+    __table_args__ = (
+        UniqueConstraint(
+            "attempt_id", "question_id", name="uq_quiz_attempt_answers_attempt_question"
+        ),
+        Index("ix_quiz_attempt_answers_attempt_id", "attempt_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    attempt_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_attempts.id", ondelete="CASCADE"), nullable=False
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_questions.id", ondelete="CASCADE"), nullable=False
+    )
+    selected_option_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_options.id", ondelete="RESTRICT"), nullable=False
+    )
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    attempt: Mapped[QuizAttempt] = relationship(back_populates="answers")

@@ -143,11 +143,19 @@ probabilistik. Lihat
 
 ### Phase 7 — Quiz Engine
 
-- Structured question generation.
-- Difficulty levels.
-- Answer validation.
-- Explanations.
-- Attempt history.
+- [x] Grounded structured single-choice generation (1-5 questions, four options).
+- [x] Immutable quiz/source snapshot and server-side answer key.
+- [x] Complete-answer validation and backend scoring with review explanations.
+- [x] Idempotent attempt submission protected by PostgreSQL constraints.
+- [x] Deterministic, Neon, and bounded Gemini HTTP verification.
+- [ ] Adaptive difficulty levels (explicitly deferred to Phase 8).
+
+Implementasi Phase 7 selesai dan quiz live lulus dengan `gemini-3.6-flash`. Revision
+database berada di `20260914_0004`. Evaluasi awal menyiapkan 8 development + 8
+holdout, tetapi verifikasi eksternal belum lengkap: 6/7 request yang tercatat sukses,
+request ketujuh berhenti karena kuota, dan 9/16 kasus belum dijalankan. Karena itu
+hasil tidak diklaim sebagai benchmark penuh. Lihat `docs/QUIZZES.md` dan
+`docs/MODEL-EVALUATION.md`.
 
 ### Phase 8 — Adaptive Learning Engine
 
@@ -171,6 +179,9 @@ probabilistik. Lihat
 - Retrieval evaluation dataset.
 - Citation validation.
 - RAG quality report.
+
+Phase 7 menghasilkan baseline evaluasi awal, tetapi item Phase 10 tetap belum selesai;
+holdout belum dijalankan akibat kuota dan baseline kecil ini bukan evaluasi produksi.
 
 ### Phase 11 — Security and Deployment
 

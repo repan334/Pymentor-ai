@@ -1,0 +1,278 @@
+{
+  "evaluation_version": "rag-eval-v1",
+  "model": "gemini-3.6-flash",
+  "tutor_prompt_version": "grounded-tutor-v2",
+  "completed_cases": 7,
+  "planned_cases": 16,
+  "scheduled_cases": 13,
+  "unrun_cases": 9,
+  "stopped_reason": "chat_quota_exceeded",
+  "provider_calls": {
+    "inference_total": 18,
+    "embedding": 11,
+    "generation": 7,
+    "retry": 0,
+    "discovery": 0
+  },
+  "latency": {
+    "samples": 7,
+    "method": "nearest-rank over end-to-end case latency",
+    "p50_ms": 3668.11,
+    "p95_ms": 4690.68,
+    "small_sample_warning": true
+  },
+  "elapsed_seconds": 33.13,
+  "cases": [
+    {
+      "case_id": "dev-direct-none",
+      "split": "development",
+      "category": "direct",
+      "expected_status": "answered",
+      "actual_status": "answered",
+      "answer": "Jika eksekusi mencapai akhir fungsi tanpa pernyataan return eksplisit, Python mengembalikan nilai None.\n[S1]",
+      "citation_sources": [
+        "functions.md"
+      ],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "pass",
+      "human_review_reason": "Jawaban menyatakan None secara tepat dan klaimnya didukung functions.md.",
+      "required_points": [
+        "mengembalikan None"
+      ],
+      "forbidden_points": [
+        "mengembalikan 0",
+        "menimbulkan error"
+      ],
+      "rationale": "Fakta disebutkan langsung pada materi fungsi.",
+      "latency_ms": {
+        "retrieval": 1008.73,
+        "generation": 3681.78,
+        "total": 4690.68
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 533,
+        "output_tokens": 68,
+        "thinking_tokens": null
+      }
+    },
+    {
+      "case_id": "dev-apply-range",
+      "split": "development",
+      "category": "new_input_application",
+      "expected_status": "answered",
+      "actual_status": "answered",
+      "answer": "Fungsi list(range(0, 6, 2)) menghasilkan nilai [0, 2, 4]. Angka 6 tidak muncul karena pada fungsi range(start, stop, step), nilai stop (dalam hal ini 6) tidak disertakan dalam hasil akhir.\n[S1]",
+      "citation_sources": [
+        "loops.md"
+      ],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "pass",
+      "human_review_reason": "Hasil [0, 2, 4] dan aturan stop-exclusive benar; ini diperiksa sebagai penerapan aturan, bukan keyword saja.",
+      "required_points": [
+        "[0, 2, 4]",
+        "stop tidak disertakan"
+      ],
+      "forbidden_points": [
+        "[0, 2, 4, 6]"
+      ],
+      "rationale": "Menerapkan aturan range pada input baru yang dapat diperiksa.",
+      "latency_ms": {
+        "retrieval": 977.86,
+        "generation": 1979.69,
+        "total": 2957.67
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 532,
+        "output_tokens": 108,
+        "thinking_tokens": null
+      }
+    },
+    {
+      "case_id": "dev-paraphrase-list",
+      "split": "development",
+      "category": "paraphrase",
+      "expected_status": "answered",
+      "actual_status": "answered",
+      "answer": "Ya, isi list bisa diubah setelah list dibuat karena list bersifat mutable. Elemen di dalamnya dapat ditambah, dihapus, atau diganti.\n[S1]",
+      "citation_sources": [
+        "collections.md"
+      ],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "pass",
+      "human_review_reason": "Jawaban menjelaskan mutability list secara tepat dan tetap fokus pada pertanyaan.",
+      "required_points": [
+        "list mutable",
+        "elemen dapat diubah"
+      ],
+      "forbidden_points": [
+        "list immutable"
+      ],
+      "rationale": "Parafrasa dari definisi mutability list.",
+      "latency_ms": {
+        "retrieval": 929.35,
+        "generation": 1848.61,
+        "total": 2778.08
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 511,
+        "output_tokens": 72,
+        "thinking_tokens": null
+      }
+    },
+    {
+      "case_id": "dev-ambiguous-output",
+      "split": "development",
+      "category": "ambiguous",
+      "expected_status": "insufficient_context",
+      "actual_status": "insufficient_context",
+      "answer": "Materi yang tersedia belum cukup untuk menjawab pertanyaan ini. Unggah atau indeks materi yang relevan, lalu coba lagi.",
+      "citation_sources": [],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "needs_manual_review",
+      "human_review_reason": "Penolakan sesuai karena pertanyaan tidak menyertakan kode, tetapi kategori ambigu dipertahankan untuk review manual.",
+      "required_points": [],
+      "forbidden_points": [
+        "hasilnya pasti"
+      ],
+      "rationale": "Tidak ada kode yang dapat dievaluasi; perlu klarifikasi.",
+      "latency_ms": {
+        "retrieval": 962.71,
+        "generation": 2779.12,
+        "total": 3741.95
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 726,
+        "output_tokens": 8,
+        "thinking_tokens": 67
+      }
+    },
+    {
+      "case_id": "dev-false-tuple",
+      "split": "development",
+      "category": "false_premise",
+      "expected_status": "answered",
+      "actual_status": "answered",
+      "answer": "Tuple tidak dapat ditambah elemennya setelah dibuat karena bersifat immutable.\n[S1]",
+      "citation_sources": [
+        "collections.md"
+      ],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "pass",
+      "human_review_reason": "Jawaban mengoreksi premis secara langsung: tuple tidak dapat ditambah karena immutable.",
+      "required_points": [
+        "premis keliru",
+        "tuple immutable"
+      ],
+      "forbidden_points": [
+        "tuple dapat dimutasi"
+      ],
+      "rationale": "Tutor seharusnya mengoreksi premis menggunakan sumber.",
+      "latency_ms": {
+        "retrieval": 1149.66,
+        "generation": 2615.43,
+        "total": 3765.22
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 510,
+        "output_tokens": 61,
+        "thinking_tokens": 124
+      }
+    },
+    {
+      "case_id": "dev-unavailable-gil",
+      "split": "development",
+      "category": "unavailable_information",
+      "expected_status": "insufficient_context",
+      "actual_status": "insufficient_context",
+      "answer": "Materi yang tersedia belum cukup untuk menjawab pertanyaan ini. Unggah atau indeks materi yang relevan, lalu coba lagi.",
+      "citation_sources": [],
+      "objective": {
+        "request_succeeded": true,
+        "status_matches": true,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "pass",
+      "human_review_reason": "Model menolak tanpa menambahkan fakta GIL yang tidak ada dalam corpus.",
+      "required_points": [],
+      "forbidden_points": [
+        "GIL memastikan"
+      ],
+      "rationale": "Corpus tidak membahas GIL.",
+      "latency_ms": {
+        "retrieval": 1413.96,
+        "generation": 2254.05,
+        "total": 3668.11
+      },
+      "token_usage": {
+        "model_version": "gemini-3.6-flash",
+        "prompt_tokens": 1089,
+        "output_tokens": 9,
+        "thinking_tokens": 126
+      }
+    },
+    {
+      "case_id": "dev-scope-break",
+      "split": "development",
+      "category": "document_scope",
+      "expected_status": "insufficient_context",
+      "actual_status": null,
+      "answer": null,
+      "citation_sources": [],
+      "error_code": "chat_quota_exceeded",
+      "objective": {
+        "request_succeeded": false,
+        "status_matches": false,
+        "citations_within_scope": true,
+        "source_subset_valid": true
+      },
+      "semantic_review": "not_gradable",
+      "required_points": [],
+      "forbidden_points": [
+        "keluar dari loop"
+      ],
+      "rationale": "Fakta ada di corpus lain tetapi dilarang oleh scope kasus.",
+      "latency_ms": {
+        "retrieval": 932.42,
+        "generation": 483.9,
+        "total": 1416.38
+      },
+      "token_usage": {
+        "model_version": null,
+        "prompt_tokens": null,
+        "output_tokens": null,
+        "thinking_tokens": null
+      }
+    }
+  ]
+}

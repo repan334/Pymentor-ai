@@ -87,6 +87,15 @@ class Settings(BaseSettings):
     chat_thinking_budget: int = 512
     chat_temperature: float = 0.2
 
+    quiz_prompt_version: str = "grounded-quiz-v1"
+    quiz_max_topic_characters: int = 500
+    quiz_max_question_count: int = 5
+    quiz_retrieval_top_k: int = 8
+    quiz_max_context_characters: int = 12_000
+    quiz_max_context_chunk_characters: int = 4_000
+    quiz_max_output_tokens: int = 2_048
+    quiz_thinking_budget: int = 128
+
     database_url: SecretStr | None = None
     database_url_unpooled: SecretStr | None = None
     neon_branch: str | None = None
@@ -101,6 +110,7 @@ class Settings(BaseSettings):
         "llm_provider",
         "llm_model",
         "llm_prompt_version",
+        "quiz_prompt_version",
     )
     @classmethod
     def validate_non_empty_text(cls, value: str) -> str:
@@ -144,6 +154,12 @@ class Settings(BaseSettings):
         "chat_max_context_characters",
         "chat_max_context_chunk_characters",
         "chat_max_output_tokens",
+        "quiz_max_topic_characters",
+        "quiz_max_question_count",
+        "quiz_retrieval_top_k",
+        "quiz_max_context_characters",
+        "quiz_max_context_chunk_characters",
+        "quiz_max_output_tokens",
     )
     @classmethod
     def validate_positive_limit(cls, value: int) -> int:
@@ -165,7 +181,7 @@ class Settings(BaseSettings):
             raise ValueError("must be non-negative")
         return value
 
-    @field_validator("chat_thinking_budget")
+    @field_validator("chat_thinking_budget", "quiz_thinking_budget")
     @classmethod
     def validate_thinking_budget(cls, value: int) -> int:
         if value < 0:
@@ -199,6 +215,8 @@ class Settings(BaseSettings):
             raise ValueError("LLM_MODEL must be 'gemini-3.6-flash' in the active chat profile")
         if self.llm_prompt_version != "grounded-tutor-v2":
             raise ValueError("LLM_PROMPT_VERSION must be 'grounded-tutor-v2'")
+        if self.quiz_prompt_version != "grounded-quiz-v1":
+            raise ValueError("QUIZ_PROMPT_VERSION must be 'grounded-quiz-v1'")
         if self.chat_max_context_chunk_characters > self.chat_max_context_characters:
             raise ValueError(
                 "CHAT_MAX_CONTEXT_CHUNK_CHARACTERS must not exceed CHAT_MAX_CONTEXT_CHARACTERS"
@@ -207,6 +225,16 @@ class Settings(BaseSettings):
             raise ValueError("CHAT_THINKING_BUDGET must be smaller than CHAT_MAX_OUTPUT_TOKENS")
         if self.chat_max_top_k > 20:
             raise ValueError("CHAT_MAX_TOP_K must not exceed the search contract maximum of 20")
+        if self.quiz_max_question_count > 5:
+            raise ValueError("QUIZ_MAX_QUESTION_COUNT must not exceed the MVP maximum of 5")
+        if self.quiz_retrieval_top_k > 20:
+            raise ValueError("QUIZ_RETRIEVAL_TOP_K must not exceed the search maximum of 20")
+        if self.quiz_max_context_chunk_characters > self.quiz_max_context_characters:
+            raise ValueError(
+                "QUIZ_MAX_CONTEXT_CHUNK_CHARACTERS must not exceed QUIZ_MAX_CONTEXT_CHARACTERS"
+            )
+        if self.quiz_thinking_budget >= self.quiz_max_output_tokens:
+            raise ValueError("QUIZ_THINKING_BUDGET must be smaller than QUIZ_MAX_OUTPUT_TOKENS")
         return self
 
     @property
@@ -230,6 +258,10 @@ class Settings(BaseSettings):
     @property
     def llm_profile_key(self) -> str:
         return ":".join((self.llm_provider, self.llm_model, self.llm_prompt_version))
+
+    @property
+    def quiz_generation_profile_key(self) -> str:
+        return ":".join((self.llm_provider, self.llm_model, self.quiz_prompt_version))
 
     @property
     def max_upload_size_bytes(self) -> int:

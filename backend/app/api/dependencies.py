@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.db.session import get_session
 from app.documents.service import DocumentService
 from app.embeddings.gemini import GeminiEmbeddingAdapter
+from app.quiz.service import QuizService
 from app.rag.service import RagTutorService
 from app.retrieval.service import IndexingService, SearchService
 
@@ -65,3 +66,12 @@ def get_rag_tutor_service(
     settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> RagTutorService:
     return RagTutorService(search_service, chat_adapter, settings)
+
+
+def get_quiz_service(
+    session: Annotated[Session, Depends(get_session)],
+    search_service: Annotated[SearchService, Depends(get_search_service)],
+    chat_adapter: Annotated[GeminiChatAdapter, Depends(get_chat_adapter)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+) -> QuizService:
+    return QuizService(session, search_service, chat_adapter, settings)

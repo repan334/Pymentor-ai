@@ -60,6 +60,8 @@ Pertanyaan dan isi dokumen diperlakukan sebagai data. Prompt tutor melarang inst
 di dalam dokumen mengganti aturan aplikasi, menjalankan kode, membuka URL, memakai
 web, atau memanggil tool. Tes deterministik membuktikan pemisahan instruksi ini, tetapi
 bukan bukti universal bahwa model live selalu tahan terhadap prompt injection.
+Baseline terukur Phase 7, termasuk denominator, review manusia, latency, error, dan
+kasus yang belum dijalankan, dicatat di `docs/MODEL-EVALUATION.md`.
 
 ## Kontrak chat
 

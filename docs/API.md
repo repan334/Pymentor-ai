@@ -3,7 +3,8 @@
 ## Scope
 
 Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, Phase 5
-menambahkan indexing serta semantic retrieval, dan Phase 6 menambahkan tutor grounded:
+menambahkan indexing serta semantic retrieval, Phase 6 menambahkan tutor grounded,
+dan Phase 7 menambahkan quiz snapshot serta scoring:
 
 - entrypoint ASGI `app.main:app`;
 - application factory `create_app()` untuk konfigurasi tes yang terisolasi;
@@ -13,11 +14,11 @@ menambahkan indexing serta semantic retrieval, dan Phase 6 menambahkan tutor gro
 - indexing dokumen dan pemeriksaan status;
 - exact cosine top-k search terhadap chunk yang eligible;
 - satu pertanyaan tutor mandiri dengan structured output dan sitasi backend-owned;
+- quiz pilihan tunggal berbasis sumber serta attempt idempotent;
 - dokumentasi Swagger UI dan schema OpenAPI bawaan FastAPI.
 
 Import dan startup aplikasi tidak membuat engine, melakukan query, membuat tabel,
-menjalankan Alembic, atau memanggil provider. Endpoint kuis dan download file asli
-belum tersedia.
+menjalankan Alembic, atau memanggil provider. Download file asli belum tersedia.
 
 ## Configuration
 
@@ -204,6 +205,32 @@ sebagai bukti.
 
 Detail alur, contoh respons, dan keterbatasan ada di `docs/RAG-TUTOR.md`.
 
+## Quiz contracts
+
+```http
+POST /api/v1/quizzes
+GET /api/v1/quizzes/{quiz_id}
+POST /api/v1/quizzes/{quiz_id}/attempts
+GET /api/v1/quiz-attempts/{attempt_id}
+```
+
+Create menerima `topic`, `document_ids`, dan `question_count` (default 3, maksimum
+5). Scope dokumen sama dengan search/chat: properti yang dihilangkan berarti seluruh
+corpus eligible, sedangkan `[]` berarti corpus kosong. Jika konteks/model tidak dapat
+menghasilkan tepat jumlah soal yang diminta, tidak ada quiz parsial yang disimpan.
+
+Create/get sebelum submit hanya mengembalikan pertanyaan serta empat opsi; kunci,
+flag benar, explanation, dan sumber tidak diserialisasi. Submit wajib memakai header
+`Idempotency-Key` dan menjawab semua soal tepat sekali. Backend menilai dari snapshot
+kunci database, membulatkan persentase half-up ke dua desimal, lalu membuka review
+per soal beserta snapshot sumber.
+
+Replay key+payload yang sama menghasilkan HTTP 200 dan attempt lama; request baru
+menghasilkan HTTP 201; key sama dengan payload berbeda menghasilkan 409. Error lain:
+404 tidak ditemukan, 422 input/konteks tidak cukup, 429 kuota, 502 output model tidak
+valid, dan 503 database/provider tidak tersedia. Kontrak lengkap dan contoh
+PowerShell ada di `docs/QUIZZES.md`.
+
 ## Run locally
 
 Dari root repository menggunakan PowerShell 5.1:
@@ -260,4 +287,8 @@ Remove-Item Env:\RUN_DATABASE_TESTS
 $env:RUN_LIVE_RAG_TESTS = "1"
 uv run pytest -q backend\tests\integration\test_rag_live_api.py
 Remove-Item Env:\RUN_LIVE_RAG_TESTS
+
+$env:RUN_LIVE_QUIZ_TESTS = "1"
+uv run pytest -q backend\tests\integration\test_quiz_live_api.py
+Remove-Item Env:\RUN_LIVE_QUIZ_TESTS
 ```
