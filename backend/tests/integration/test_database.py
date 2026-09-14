@@ -7,7 +7,7 @@ from app.db.models import Document, DocumentChunk
 from app.db.session import create_database_engine
 from sqlalchemy import insert, select, text
 
-EXPECTED_REVISION = "20260914_0004"
+EXPECTED_REVISION = "20260914_0005"
 
 pytestmark = pytest.mark.skipif(
     os.getenv("RUN_DATABASE_TESTS") != "1",

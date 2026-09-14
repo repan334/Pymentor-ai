@@ -5,7 +5,7 @@ from hashlib import sha256
 
 import pytest
 from app.core.config import Settings
-from app.db.models import Document, Quiz
+from app.db.models import Document, Quiz, Topic
 from app.db.session import create_database_engine, get_session
 from app.factory import create_app
 from fastapi.testclient import TestClient
@@ -30,6 +30,7 @@ def test_live_http_contract_create_get_submit_result_and_replay() -> None:
     engine = create_database_engine(settings)
     session_factory = sessionmaker(engine, expire_on_commit=False)
     quiz_id: int | None = None
+    topic_id = f"phase-7-{token}"
 
     def test_session() -> Iterator[Session]:
         with session_factory() as session:
@@ -47,9 +48,15 @@ def test_live_http_contract_create_get_submit_result_and_replay() -> None:
             document_id = upload.json()["id"]
             indexed = client.post(f"/api/v1/documents/{document_id}/index")
             indexed.raise_for_status()
+            topic = client.post(
+                "/api/v1/topics",
+                json={"id": topic_id, "display_name": f"Phase 7 {token}"},
+            )
+            topic.raise_for_status()
             created = client.post(
                 "/api/v1/quizzes",
                 json={
+                    "topic_id": topic_id,
                     "topic": "hasil fungsi tanpa return eksplisit",
                     "document_ids": [document_id],
                     "question_count": 1,
@@ -112,5 +119,6 @@ def test_live_http_contract_create_get_submit_result_and_replay() -> None:
         with engine.begin() as connection:
             if quiz_id is not None:
                 connection.execute(delete(Quiz).where(Quiz.id == quiz_id))
+            connection.execute(delete(Topic).where(Topic.id == topic_id))
             connection.execute(delete(Document).where(Document.checksum_sha256 == checksum))
         engine.dispose()

@@ -150,8 +150,8 @@ probabilistik. Lihat
 - [x] Deterministic, Neon, and bounded Gemini HTTP verification.
 - [ ] Adaptive difficulty levels (explicitly deferred to Phase 8).
 
-Implementasi Phase 7 selesai dan quiz live lulus dengan `gemini-3.6-flash`. Revision
-database berada di `20260914_0004`. Evaluasi awal menyiapkan 8 development + 8
+Implementasi Phase 7 selesai dan quiz live lulus dengan `gemini-3.6-flash`. Evaluasi
+awal menyiapkan 8 development + 8
 holdout, tetapi verifikasi eksternal belum lengkap: 6/7 request yang tercatat sukses,
 request ketujuh berhenti karena kuota, dan 9/16 kasus belum dijalankan. Karena itu
 hasil tidak diklaim sebagai benchmark penuh. Lihat `docs/QUIZZES.md` dan
@@ -159,10 +159,18 @@ hasil tidak diklaim sebagai benchmark penuh. Lihat `docs/QUIZZES.md` dan
 
 ### Phase 8 — Adaptive Learning Engine
 
-- Mastery score.
-- Topic weakness detection.
-- Difficulty selection.
-- Review recommendation.
+- [x] Stable topic IDs and one-topic assignment for new quizzes.
+- [x] Derived latest-attempt practice score per topic.
+- [x] Evidence threshold and rule-based learning recommendation.
+- [x] Legacy exact-name assignment with ambiguous quizzes left unassigned.
+- [x] Deterministic and PostgreSQL verification for isolation, replay, and boundaries.
+- [ ] Scientifically validated mastery model (not claimed by this MVP).
+- [ ] Adaptive difficulty generation (deferred; no model call added in Phase 8).
+
+Phase 8 MVP selesai pada revision `20260914_0005`. Score menggambarkan performa
+latihan, bukan mastery tervalidasi. Sembilan kasus evaluasi Phase 7 tetap pending dan
+tidak ada kuota inference yang digunakan pada fase ini. Lihat
+`docs/TOPIC-PROGRESS.md`.
 
 ### Phase 9 — Streamlit Interface
 

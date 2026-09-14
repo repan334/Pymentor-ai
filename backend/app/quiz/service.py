@@ -19,7 +19,10 @@ from app.db.models import (
     QuizOption,
     QuizQuestion,
     QuizQuestionSource,
+    Topic,
 )
+from app.progress.models import TopicNotFound
+from app.progress.service import validate_topic_id
 from app.quiz.models import (
     AttemptInputError,
     AttemptNotFound,
@@ -58,11 +61,14 @@ class QuizService:
     def create_quiz(
         self,
         *,
+        topic_id: str,
         topic: str,
         document_ids: Sequence[int] | None,
         question_count: int,
     ) -> QuizView:
+        topic_id = validate_topic_id(topic_id)
         self._validate_create_input(topic, document_ids, question_count)
+        self._require_generation_topic(topic_id)
         search = self.search_service.search(
             query=topic,
             top_k=self.settings.quiz_retrieval_top_k,
@@ -85,6 +91,7 @@ class QuizService:
         validated = self._validate_generated(output, question_count, sources)
         try:
             quiz = Quiz(
+                topic_id=topic_id,
                 topic=topic,
                 question_count=question_count,
                 document_ids=None if document_ids is None else list(document_ids),
@@ -242,6 +249,12 @@ class QuizService:
         if document_ids is not None and len(document_ids) > self.settings.chat_max_document_ids:
             raise QuizInputError("document_ids exceeds the configured limit")
 
+    def _require_generation_topic(self, topic_id: str) -> None:
+        if self.session.get(Topic, topic_id) is None:
+            self.session.rollback()
+            raise TopicNotFound(topic_id)
+        self.session.rollback()
+
     def _build_context(
         self,
         hits: Sequence[SearchHit],
@@ -389,6 +402,7 @@ def _score_selected(
 def _quiz_view(quiz: Quiz) -> QuizView:
     return QuizView(
         id=quiz.id,
+        topic_id=quiz.topic_id,
         topic=quiz.topic,
         question_count=quiz.question_count,
         questions=tuple(

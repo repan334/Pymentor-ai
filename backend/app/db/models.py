@@ -162,6 +162,31 @@ class DocumentChunk(Base):
     document: Mapped[Document] = relationship(back_populates="chunks")
 
 
+class Topic(Base):
+    """Stable user-managed topic identity for grouping quiz practice evidence."""
+
+    __tablename__ = "topics"
+    __table_args__ = (
+        CheckConstraint("id ~ '^[a-z][a-z0-9]*(-[a-z0-9]+)*$'", name="topic_id_slug_format"),
+        CheckConstraint("length(btrim(id)) > 0", name="topic_id_not_blank"),
+        CheckConstraint("length(btrim(display_name)) > 0", name="topic_name_not_blank"),
+        UniqueConstraint("normalized_name", name="uq_topics_normalized_name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="assigned_topic")
+
+
 class Quiz(Base):
     """Immutable generated quiz snapshot; answers stay server-side until submission."""
 
@@ -172,6 +197,9 @@ class Quiz(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    topic_id: Mapped[str | None] = mapped_column(
+        ForeignKey("topics.id", ondelete="SET NULL"), index=True
+    )
     topic: Mapped[str] = mapped_column(String(500), nullable=False)
     question_count: Mapped[int] = mapped_column(Integer, nullable=False)
     document_ids: Mapped[list[int] | None] = mapped_column(JSONB)
@@ -192,6 +220,7 @@ class Quiz(Base):
     attempts: Mapped[list["QuizAttempt"]] = relationship(
         back_populates="quiz", cascade="all, delete-orphan", passive_deletes=True
     )
+    assigned_topic: Mapped[Topic | None] = relationship(back_populates="quizzes")
 
 
 class QuizQuestion(Base):

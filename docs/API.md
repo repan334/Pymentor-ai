@@ -4,7 +4,7 @@
 
 Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, Phase 5
 menambahkan indexing serta semantic retrieval, Phase 6 menambahkan tutor grounded,
-dan Phase 7 menambahkan quiz snapshot serta scoring:
+Phase 7 menambahkan quiz snapshot/scoring, dan Phase 8 menambahkan topic progress:
 
 - entrypoint ASGI `app.main:app`;
 - application factory `create_app()` untuk konfigurasi tes yang terisolasi;
@@ -15,6 +15,7 @@ dan Phase 7 menambahkan quiz snapshot serta scoring:
 - exact cosine top-k search terhadap chunk yang eligible;
 - satu pertanyaan tutor mandiri dengan structured output dan sitasi backend-owned;
 - quiz pilihan tunggal berbasis sumber serta attempt idempotent;
+- topic ID stabil, assignment quiz, dan rekomendasi latihan berbasis aturan;
 - dokumentasi Swagger UI dan schema OpenAPI bawaan FastAPI.
 
 Import dan startup aplikasi tidak membuat engine, melakukan query, membuat tabel,
@@ -214,8 +215,9 @@ POST /api/v1/quizzes/{quiz_id}/attempts
 GET /api/v1/quiz-attempts/{attempt_id}
 ```
 
-Create menerima `topic`, `document_ids`, dan `question_count` (default 3, maksimum
-5). Scope dokumen sama dengan search/chat: properti yang dihilangkan berarti seluruh
+Create menerima `topic_id`, `topic`, `document_ids`, dan `question_count` (default 3,
+maksimum 5). `topic_id` adalah slug stabil yang sudah terdaftar. Scope dokumen sama
+dengan search/chat: properti yang dihilangkan berarti seluruh
 corpus eligible, sedangkan `[]` berarti corpus kosong. Jika konteks/model tidak dapat
 menghasilkan tepat jumlah soal yang diminta, tidak ada quiz parsial yang disimpan.
 
@@ -230,6 +232,27 @@ menghasilkan HTTP 201; key sama dengan payload berbeda menghasilkan 409. Error l
 404 tidak ditemukan, 422 input/konteks tidak cukup, 429 kuota, 502 output model tidak
 valid, dan 503 database/provider tidak tersedia. Kontrak lengkap dan contoh
 PowerShell ada di `docs/QUIZZES.md`.
+
+## Topic progress contracts
+
+```http
+POST /api/v1/topics
+GET /api/v1/topics?limit=20&offset=0
+GET /api/v1/topics/{topic_id}
+PUT /api/v1/quizzes/{quiz_id}/topic
+GET /api/v1/topics/{topic_id}/progress
+```
+
+Topic ID adalah slug lowercase stabil. Quiz baru wajib memiliki satu topic. Quiz
+legacy revision `0004` tetap dapat dibaca dengan `topic_id=null`; exact normalized
+name dapat digunakan saat topic dibuat, sedangkan nama ambigu tetap unassigned sampai
+assignment eksplisit.
+
+Progress diturunkan dari attempt terbaru per quiz, bukan counter. Tie ditentukan oleh
+`created_at DESC, id DESC`. Respons memuat score performa latihan, jumlah soal/quiz
+yang dihitung, dan recommendation berbasis aturan. Tidak ada attempt menghasilkan
+score null dan evidence nol. Detail formula serta batas rekomendasi ada di
+`docs/TOPIC-PROGRESS.md`.
 
 ## Run locally
 

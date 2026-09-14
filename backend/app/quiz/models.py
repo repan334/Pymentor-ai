@@ -79,6 +79,7 @@ class QuizQuestionView:
 @dataclass(frozen=True, slots=True)
 class QuizView:
     id: int
+    topic_id: str | None
     topic: str
     question_count: int
     questions: tuple[QuizQuestionView, ...]

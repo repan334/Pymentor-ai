@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from app.core.config import Settings
-from app.db.models import Quiz, QuizOption, QuizQuestion
+from app.db.models import Quiz, QuizOption, QuizQuestion, Topic
 from app.quiz.models import (
     AttemptInputError,
     GeneratedQuizOutput,
@@ -27,6 +27,11 @@ class FakeSession:
 
     def rollback(self) -> None:
         self.rollbacks += 1
+
+    def get(self, model: type[Any], identity: Any) -> Any:
+        if model is Topic:
+            return Topic(id=identity, display_name="Fungsi", normalized_name="fungsi")
+        return None
 
 
 class FakeSearch:
@@ -96,7 +101,9 @@ def _service(output: GeneratedQuizOutput | Exception, *hits: SearchHit) -> QuizS
 def test_empty_corpus_and_model_insufficient_never_persist_partial_quiz() -> None:
     empty = _service(_output())
     with pytest.raises(QuizInsufficientContext):
-        empty.create_quiz(topic="fungsi", document_ids=[], question_count=1)
+        empty.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[], question_count=1
+        )
     assert empty.session.added == []
     assert empty.chat_adapter.calls == []
 
@@ -104,7 +111,9 @@ def test_empty_corpus_and_model_insufficient_never_persist_partial_quiz() -> Non
         GeneratedQuizOutput(status="insufficient_context", questions=[]), _hit()
     )
     with pytest.raises(QuizInsufficientContext):
-        insufficient.create_quiz(topic="fungsi", document_ids=[2], question_count=1)
+        insufficient.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+        )
     assert insufficient.session.added == []
 
 
@@ -141,14 +150,18 @@ def test_invalid_generated_quiz_is_rejected_before_persistence(
 ) -> None:
     service = _service(output, _hit())
     with pytest.raises(QuizOutputInvalid):
-        service.create_quiz(topic="fungsi", document_ids=[2], question_count=1)
+        service.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+        )
     assert service.session.added == []
 
 
 def test_source_outside_requested_scope_is_rejected() -> None:
     service = _service(_output(), _hit(document_id=99))
     with pytest.raises(QuizOutputInvalid):
-        service.create_quiz(topic="fungsi", document_ids=[2], question_count=1)
+        service.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+        )
     assert service.chat_adapter.calls == []
 
 
@@ -167,7 +180,9 @@ def test_document_instruction_stays_in_source_data_not_system_instruction() -> N
     )
     service = _service(invalid_output, _hit(content=injection))
     with pytest.raises(QuizOutputInvalid):
-        service.create_quiz(topic="fungsi", document_ids=[2], question_count=1)
+        service.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+        )
 
     call = service.chat_adapter.calls[0]
     assert call["system_instruction"] == QUIZ_SYSTEM_INSTRUCTION
@@ -178,7 +193,9 @@ def test_document_instruction_stays_in_source_data_not_system_instruction() -> N
 def test_provider_error_occurs_before_any_database_write() -> None:
     service = _service(RuntimeError("provider unavailable"), _hit())
     with pytest.raises(RuntimeError):
-        service.create_quiz(topic="fungsi", document_ids=[2], question_count=1)
+        service.create_quiz(
+            topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+        )
     assert service.session.added == []
 
 

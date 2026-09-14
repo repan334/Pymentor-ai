@@ -6,7 +6,8 @@ Phase 7 menyediakan kuis pilihan tunggal berbasis chunk yang sudah eligible untu
 retrieval. Kuis dibuat sinkron dalam satu request dengan profil
 `gemini:gemini-3.6-flash:grounded-quiz-v1`. Default `question_count` adalah 3 dan
 maksimum MVP adalah 5. Tidak ada difficulty adaptif, mastery, atau rekomendasi;
-bagian tersebut tetap milik Phase 8.
+bagian tersebut tetap milik Phase 8. Mulai Phase 8, create quiz juga wajib menyertakan
+ID topic stabil yang telah dibuat melalui `POST /api/v1/topics`.
 
 Konfigurasi quiz memakai `Settings` yang sama dengan API lain:
 
@@ -49,6 +50,7 @@ POST /api/v1/quizzes
 
 ```json
 {
+  "topic_id": "python-functions",
   "topic": "fungsi tanpa return eksplisit",
   "document_ids": [20],
   "question_count": 1
@@ -106,6 +108,7 @@ salin `quiz_id`, pilih satu `option_id` untuk setiap soal, lalu submit dengan he
 ```powershell
 $documentId = 20
 $createBody = @{
+    topic_id = "python-functions"
     topic = "fungsi tanpa return eksplisit"
     document_ids = @($documentId)
     question_count = 1

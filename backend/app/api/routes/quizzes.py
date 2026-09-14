@@ -32,6 +32,7 @@ from app.embeddings.models import (
     EmbeddingUnavailableError,
     EmbeddingValidationError,
 )
+from app.progress.models import TopicInputError, TopicNotFound
 from app.quiz.models import (
     AttemptInputError,
     AttemptNotFound,
@@ -95,7 +96,7 @@ _ERROR_RESPONSES = {
     response_model=QuizResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Generate and persist one grounded single-choice quiz",
-    responses={code: value for code, value in _ERROR_RESPONSES.items() if code != 404},
+    responses=_ERROR_RESPONSES,
 )
 def create_quiz(
     request: QuizCreateRequest,
@@ -103,12 +104,15 @@ def create_quiz(
 ) -> QuizResponse:
     try:
         result = service.create_quiz(
+            topic_id=request.topic_id,
             topic=request.topic,
             document_ids=request.document_ids,
             question_count=request.question_count,
         )
-    except (QuizInputError, SearchInputError, QuizInsufficientContext) as exc:
+    except (QuizInputError, TopicInputError, SearchInputError, QuizInsufficientContext) as exc:
         raise _error(422, exc.code, str(exc)) from exc
+    except TopicNotFound as exc:
+        raise _error(404, exc.code, "Topic was not found") from exc
     except (QuizOutputInvalid, ChatOutputInvalidError, ChatTruncatedError) as exc:
         raise _error(502, exc.code, "The provider returned an invalid quiz") from exc
     except ChatSafetyBlockedError as exc:

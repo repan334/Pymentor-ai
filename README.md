@@ -150,18 +150,25 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/chat" -Content
 Lihat [panduan Grounded RAG Tutor](docs/RAG-TUTOR.md) untuk kontrak sitasi,
 pemisahan error, batas konteks, dan keterbatasan grounding.
 
-Quiz dibuat dari dokumen yang sudah `indexing_status=ready`. Respons create/get
-menyembunyikan kunci; kunci, explanation, dan sumber baru dibuka setelah semua soal
-disubmit dengan idempotency key:
+Topic Phase 8 harus dibuat sebelum quiz baru. Progress memakai perhitungan
+terbaru-per-quiz tanpa model call:
 
 ```powershell
-$quizBody = @{ topic = "fungsi Python"; document_ids = @($documentId); question_count = 1 } | ConvertTo-Json
+$topic = @{ id = "python-functions"; display_name = "Fungsi Python" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/topics" -ContentType "application/json" -Body $topic
+
+$quizBody = @{ topic_id = "python-functions"; topic = "fungsi Python"; document_ids = @($documentId); question_count = 1 } | ConvertTo-Json
 $quiz = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/quizzes" -ContentType "application/json" -Body $quizBody
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/topics/python-functions/progress"
 ```
+
+Respons create/get quiz menyembunyikan kunci; kunci, explanation, dan sumber baru
+dibuka setelah semua soal disubmit dengan idempotency key.
 
 Lihat [panduan quiz](docs/QUIZZES.md) untuk submit/replay dan
 [laporan evaluasi model](docs/MODEL-EVALUATION.md) untuk denominator serta batasan
 hasil aktual.
+Lihat [panduan topic progress](docs/TOPIC-PROGRESS.md).
 
 ## Status Proyek
 
@@ -175,7 +182,7 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
-- Alembic berada pada revision `20260914_0004`.
+- Alembic berada pada revision `20260914_0005`.
 - API ingestion mendukung UTF-8 TXT/Markdown dan PDF berbasis teks, menyimpan teks
   acuan serta chunk secara atomik, dan mengembalikan dokumen lama untuk upload
   identik tanpa menggandakan chunk.
@@ -188,4 +195,6 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
 - Implementasi quiz Phase 7, persistence Neon, race idempotency, dan HTTP live
   create/get/submit/result/replay lulus. Evaluasi RAG eksternal masih parsial karena
   kuota: 6 request sukses, 1 error kuota, dan 9/16 kasus belum dijalankan.
+- Phase 8 menambahkan topic ID stabil, assignment quiz, score latihan dari attempt
+  terbaru per quiz, dan rekomendasi berbasis aturan tanpa model call atau counter.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

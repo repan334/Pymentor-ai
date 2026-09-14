@@ -83,6 +83,13 @@ sengaja tidak memakai foreign key ke dokumen/chunk agar review attempt lama tida
 berubah bila lifecycle materi berkembang. Tidak ada data pengguna yang diubah,
 diindeks ulang, atau dihapus oleh revision ini.
 
+Revision `20260914_0005` menambahkan registry `topics` dengan primary key slug stabil
+dan unique normalized display name. Kolom nullable `quizzes.topic_id` memakai foreign
+key `ON DELETE SET NULL` agar quiz legacy/snapshot tetap dapat dibaca. Migration tidak
+menebak assignment dari teks lama; pencocokan exact-name dan assignment eksplisit
+dilakukan application service. Progress tidak disimpan sebagai counter atau tabel
+agregat: query menghitung ulang latest finalized attempt per quiz.
+
 ## Alur migrasi aman
 
 Tinjau revision dan SQL sebelum menerapkan perubahan:
@@ -109,6 +116,8 @@ hanya mengizinkan satu checksum. Extension `vector` sengaja tidak dihapus oleh
 downgrade karena mungkin dipakai object lain di database.
 Downgrade `0004` menghapus seluruh quiz dan attempt, sehingga juga tidak boleh
 dijalankan pada data pengguna tanpa backup/rencana pemulihan.
+Downgrade `0005` menghapus registry topic dan assignment, sehingga juga kehilangan
+pengelompokan progress walaupun quiz/attempt tetap ada.
 
 ## Verifikasi
 

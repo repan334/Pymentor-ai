@@ -6,7 +6,7 @@ from threading import Barrier
 
 import pytest
 from app.core.config import Settings
-from app.db.models import Quiz, QuizAttempt
+from app.db.models import Quiz, QuizAttempt, Topic
 from app.db.session import create_database_engine
 from app.quiz.models import GeneratedQuizOutput, GeneratedQuizQuestion, SubmittedAnswer
 from app.quiz.service import QuizService
@@ -99,10 +99,12 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
     quiz_id: int | None = None
     try:
         with Session(engine, expire_on_commit=False) as session:
+            session.add(Topic(id=topic, display_name=topic, normalized_name=topic))
+            session.commit()
             chat = DatabaseQuizChat(session)
             service = QuizService(session, DatabaseQuizSearch(session, document_id), chat, settings)
             public_quiz = service.create_quiz(
-                topic=topic, document_ids=[document_id], question_count=1
+                topic_id=topic, topic=topic, document_ids=[document_id], question_count=1
             )
             quiz_id = public_quiz.id
             assert chat.calls == 1
@@ -177,9 +179,10 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
             attempt_ids = list(executor.map(lambda _: submit_concurrently(), range(2)))
         assert attempt_ids[0] == attempt_ids[1]
     finally:
-        if quiz_id is not None:
-            with engine.begin() as connection:
+        with engine.begin() as connection:
+            if quiz_id is not None:
                 connection.execute(delete(Quiz).where(Quiz.id == quiz_id))
+            connection.execute(delete(Topic).where(Topic.id == topic))
         engine.dispose()
 
 
@@ -191,6 +194,8 @@ def test_neon_quiz_transaction_failure_leaves_no_partial_snapshot() -> None:
     document_id = 910_000_000 + int(token[:6], 16)
     try:
         with Session(engine, expire_on_commit=False) as session:
+            session.add(Topic(id=topic, display_name=topic, normalized_name=topic))
+            session.commit()
             service = QuizService(
                 session,
                 DatabaseQuizSearch(session, document_id),
@@ -203,7 +208,12 @@ def test_neon_quiz_transaction_failure_leaves_no_partial_snapshot() -> None:
 
             event.listen(session, "before_commit", abort_commit, once=True)
             with pytest.raises(RuntimeError, match="simulated commit failure"):
-                service.create_quiz(topic=topic, document_ids=[document_id], question_count=1)
+                service.create_quiz(
+                    topic_id=topic,
+                    topic=topic,
+                    document_ids=[document_id],
+                    question_count=1,
+                )
 
         with Session(engine) as verification_session:
             assert (
@@ -213,4 +223,5 @@ def test_neon_quiz_transaction_failure_leaves_no_partial_snapshot() -> None:
     finally:
         with engine.begin() as connection:
             connection.execute(delete(Quiz).where(Quiz.topic == topic))
+            connection.execute(delete(Topic).where(Topic.id == topic))
         engine.dispose()

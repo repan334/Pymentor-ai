@@ -5,6 +5,7 @@ def test_schema_contains_document_and_quiz_snapshot_tables() -> None:
     assert set(Base.metadata.tables) == {
         "documents",
         "document_chunks",
+        "topics",
         "quizzes",
         "quiz_questions",
         "quiz_options",

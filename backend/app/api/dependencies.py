@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.db.session import get_session
 from app.documents.service import DocumentService
 from app.embeddings.gemini import GeminiEmbeddingAdapter
+from app.progress.service import ProgressService
 from app.quiz.service import QuizService
 from app.rag.service import RagTutorService
 from app.retrieval.service import IndexingService, SearchService
@@ -75,3 +76,9 @@ def get_quiz_service(
     settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> QuizService:
     return QuizService(session, search_service, chat_adapter, settings)
+
+
+def get_progress_service(
+    session: Annotated[Session, Depends(get_session)],
+) -> ProgressService:
+    return ProgressService(session)

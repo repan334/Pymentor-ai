@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
 class QuizCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    topic_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
     topic: str
     document_ids: list[PositiveInt] | None = None
     question_count: int = Field(default=3, ge=1, le=5)
@@ -42,6 +43,7 @@ class QuizQuestionResponse(BaseModel):
 
 class QuizResponse(BaseModel):
     id: int
+    topic_id: str | None
     topic: str
     question_count: int
     questions: list[QuizQuestionResponse]

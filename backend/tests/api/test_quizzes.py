@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 def _quiz() -> QuizView:
     return QuizView(
         id=10,
+        topic_id="python-functions",
         topic="fungsi Python",
         question_count=1,
         questions=(
@@ -116,13 +117,20 @@ def test_create_and_get_hide_key_explanation_and_sources() -> None:
     with _client(service) as client:
         created = client.post(
             "/api/v1/quizzes",
-            json={"topic": "fungsi Python", "document_ids": [2], "question_count": 1},
+            json={
+                "topic_id": "python-functions",
+                "topic": "fungsi Python",
+                "document_ids": [2],
+                "question_count": 1,
+            },
         )
         fetched = client.get("/api/v1/quizzes/10")
 
     assert created.status_code == 201
     assert fetched.status_code == 200
+    assert service.calls[0][1]["topic_id"] == "python-functions"
     for payload in (created.json(), fetched.json()):
+        assert payload["topic_id"] == "python-functions"
         serialized = str(payload)
         assert "correct_option" not in serialized
         assert "is_correct" not in serialized
@@ -175,11 +183,12 @@ def test_idempotent_replay_is_200_and_payload_conflict_is_409() -> None:
 @pytest.mark.parametrize(
     "payload",
     [
-        {"topic": ""},
-        {"topic": "valid", "question_count": 0},
-        {"topic": "valid", "question_count": 6},
-        {"topic": "valid", "document_ids": [1, 1]},
-        {"topic": "valid", "correct_option_id": 1},
+        {"topic_id": "python-functions", "topic": ""},
+        {"topic_id": "python-functions", "topic": "valid", "question_count": 0},
+        {"topic_id": "python-functions", "topic": "valid", "question_count": 6},
+        {"topic_id": "python-functions", "topic": "valid", "document_ids": [1, 1]},
+        {"topic_id": "INVALID", "topic": "valid"},
+        {"topic_id": "python-functions", "topic": "valid", "correct_option_id": 1},
     ],
 )
 def test_create_rejects_invalid_or_key_control_fields(payload: dict[str, Any]) -> None:
