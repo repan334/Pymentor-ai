@@ -427,6 +427,7 @@ class SearchService:
         if document_ids is not None:
             eligible_query = eligible_query.where(Document.id.in_(document_ids))
         eligible_ids = tuple(self.session.scalars(eligible_query).all())
+        self.session.rollback()
         if not eligible_ids:
             return SearchResult(
                 query=query,
@@ -450,24 +451,26 @@ class SearchService:
             .order_by(distance.asc(), DocumentChunk.id.asc())
             .limit(top_k)
         ).all()
+        hits = tuple(
+            SearchHit(
+                chunk_id=chunk.id,
+                document_id=chunk.document_id,
+                source_name=source_name,
+                content=chunk.content,
+                start_char=chunk.start_char,
+                end_char=chunk.end_char,
+                page_number=chunk.page_number,
+                metadata=dict(chunk.extra_metadata),
+                cosine_distance=float(cosine_distance),
+            )
+            for chunk, source_name, cosine_distance in rows
+        )
+        self.session.rollback()
         return SearchResult(
             query=query,
             top_k=top_k,
             embedding_profile=self.adapter.profile.key,
-            results=tuple(
-                SearchHit(
-                    chunk_id=chunk.id,
-                    document_id=chunk.document_id,
-                    source_name=source_name,
-                    content=chunk.content,
-                    start_char=chunk.start_char,
-                    end_char=chunk.end_char,
-                    page_number=chunk.page_number,
-                    metadata=dict(chunk.extra_metadata),
-                    cosine_distance=float(cosine_distance),
-                )
-                for chunk, source_name, cosine_distance in rows
-            ),
+            results=hits,
         )
 
     def _eligible_filter(self) -> Any:

@@ -122,11 +122,20 @@ answer is present. See `docs/EMBEDDINGS-AND-RETRIEVAL.md`.
 
 ### Phase 6 — RAG Answer Engine
 
-- Context construction.
-- Prompt construction.
-- Grounded answer generation.
-- Source citations.
-- Unsupported-question handling.
+- [x] Bounded context construction from eligible Phase 5 retrieval results.
+- [x] Versioned tutor prompt with untrusted question/document boundaries.
+- [x] Replaceable Gemini chat adapter with bounded timeout/retry and structured output.
+- [x] Backend-owned source IDs, excerpts, offsets, metadata, and citation markers.
+- [x] Explicit unsupported-question behavior without a provider call for empty corpus.
+- [x] Deterministic API/unit verification and PostgreSQL retrieval-to-citation verification.
+- [ ] Live `gemini-2.5-flash` and HTTP end-to-end verification (provider returned HTTP 404
+  for the configured key/project on 2026-09-14; no fallback model was selected).
+
+Phase 6 implementation is complete, but external chat verification is pending. The
+endpoint handles one standalone question and stores no history. Grounding validation
+prevents invented source metadata and out-of-context IDs, but semantic support and
+insufficient-context classification remain probabilistic model judgments. See
+`docs/RAG-TUTOR.md`.
 
 ### Phase 7 — Quiz Engine
 

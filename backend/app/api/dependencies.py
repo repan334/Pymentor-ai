@@ -4,10 +4,12 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
+from app.chat.gemini import GeminiChatAdapter
 from app.core.config import Settings
 from app.db.session import get_session
 from app.documents.service import DocumentService
 from app.embeddings.gemini import GeminiEmbeddingAdapter
+from app.rag.service import RagTutorService
 from app.retrieval.service import IndexingService, SearchService
 
 
@@ -45,3 +47,21 @@ def get_search_service(
     adapter: Annotated[GeminiEmbeddingAdapter, Depends(get_embedding_adapter)],
 ) -> SearchService:
     return SearchService(session, adapter, settings)
+
+
+def get_chat_adapter(
+    settings: Annotated[Settings, Depends(get_app_settings)],
+) -> Iterator[GeminiChatAdapter]:
+    adapter = GeminiChatAdapter(settings)
+    try:
+        yield adapter
+    finally:
+        adapter.close()
+
+
+def get_rag_tutor_service(
+    search_service: Annotated[SearchService, Depends(get_search_service)],
+    chat_adapter: Annotated[GeminiChatAdapter, Depends(get_chat_adapter)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+) -> RagTutorService:
+    return RagTutorService(search_service, chat_adapter, settings)

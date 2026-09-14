@@ -2,8 +2,8 @@
 
 ## Scope
 
-Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, dan Phase 5
-menambahkan indexing serta semantic retrieval:
+Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, Phase 5
+menambahkan indexing serta semantic retrieval, dan Phase 6 menambahkan tutor grounded:
 
 - entrypoint ASGI `app.main:app`;
 - application factory `create_app()` untuk konfigurasi tes yang terisolasi;
@@ -12,11 +12,12 @@ menambahkan indexing serta semantic retrieval:
 - upload dan pembacaan dokumen/chunk;
 - indexing dokumen dan pemeriksaan status;
 - exact cosine top-k search terhadap chunk yang eligible;
+- satu pertanyaan tutor mandiri dengan structured output dan sitasi backend-owned;
 - dokumentasi Swagger UI dan schema OpenAPI bawaan FastAPI.
 
 Import dan startup aplikasi tidak membuat engine, melakukan query, membuat tabel,
-menjalankan Alembic, atau memanggil provider. Endpoint chat, kuis, dan download file
-asli belum tersedia.
+menjalankan Alembic, atau memanggil provider. Endpoint kuis dan download file asli
+belum tersedia.
 
 ## Configuration
 
@@ -168,6 +169,41 @@ metadata halaman, dan `cosine_distance`. Nilai distance lebih kecil berarti lebi
 dekat, bukan confidence, kebenaran jawaban, atau bukti bahwa jawaban tersedia. Belum
 ada threshold universal karena belum dikalibrasi.
 
+## Chat contract
+
+```http
+POST /api/v1/chat
+Content-Type: application/json
+```
+
+```json
+{
+  "question": "Mengapa fungsi dapat mengembalikan None?",
+  "top_k": 4,
+  "document_ids": [20]
+}
+```
+
+Request adalah satu pertanyaan mandiri tanpa history. `top_k` wajib 1–20 dan juga
+tunduk pada limit chat terkonfigurasi (default 8). Pertanyaan serta jumlah ID dibatasi;
+ID harus positif dan unik. `document_ids` yang dihilangkan memakai seluruh corpus
+eligible, sedangkan `[]` menghasilkan `insufficient_context` tanpa embedding query
+atau chat generation.
+
+Respons HTTP 200 berstatus `answered` atau `insufficient_context`. Untuk jawaban,
+backend menambahkan marker seperti `[S1]` dan membangun setiap citation dari chunk
+yang benar-benar dikirim: `reference_id`, document/chunk ID, nama sumber, offset,
+excerpt aktual, halaman opsional, dan metadata. Model tidak menentukan metadata itu.
+Jika konteks tidak cukup, citations kosong dan hasil retrieval tidak dipresentasikan
+sebagai bukti.
+
+- 422: request invalid atau safety block.
+- 429: kuota embedding/chat habis.
+- 502: output chat malformed, terpotong, atau sitasi invalid.
+- 503: database, embedding, atau chat provider tidak tersedia.
+
+Detail alur, contoh respons, dan keterbatasan ada di `docs/RAG-TUTOR.md`.
+
 ## Run locally
 
 Dari root repository menggunakan PowerShell 5.1:
@@ -220,4 +256,8 @@ uv lock --check
 $env:RUN_DATABASE_TESTS = "1"
 uv run pytest -q backend\tests\integration
 Remove-Item Env:\RUN_DATABASE_TESTS
+
+$env:RUN_LIVE_RAG_TESTS = "1"
+uv run pytest -q backend\tests\integration\test_rag_live_api.py
+Remove-Item Env:\RUN_LIVE_RAG_TESTS
 ```

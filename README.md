@@ -137,9 +137,24 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/search" -Conte
 Detail profil, batas kuota, status kegagalan, dan arti cosine distance tersedia di
 [panduan embedding dan retrieval](docs/EMBEDDINGS-AND-RETRIEVAL.md).
 
+Untuk tutor grounded, verifikasi akses model chat terlebih dahulu lalu kirim satu
+pertanyaan mandiri. Endpoint memakai retrieval Phase 5 secara internal dan tidak
+menerima system prompt atau key dari client:
+
+```powershell
+uv run python backend\scripts\chat_smoke.py
+$chatBody = @{ question = "Mengapa fungsi dapat mengembalikan None?"; top_k = 4; document_ids = @($documentId) } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/chat" -ContentType "application/json" -Body $chatBody
+```
+
+Lihat [panduan Grounded RAG Tutor](docs/RAG-TUTOR.md) untuk kontrak sitasi,
+pemisahan error, batas konteks, dan keterbatasan grounding.
+
 ## Status Proyek
 
 Phase 1 sampai Phase 5 selesai dan telah diverifikasi pada 14 September 2026.
+Implementasi serta verifikasi lokal/database Phase 6 selesai; verifikasi chat live
+masih tertunda karena model target mengembalikan HTTP 404 untuk key/project lokal.
 
 - Target: project `twilight-firefly-94879334`, branch `production`, database `neondb`.
 - FastAPI menyediakan `GET /api/v1/health`, `/docs`, dan `/openapi.json` tanpa
@@ -153,4 +168,7 @@ Phase 1 sampai Phase 5 selesai dan telah diverifikasi pada 14 September 2026.
 - Ekstensi pgvector aktif. Chunk dapat diindeks dengan profil tetap
   `gemini/gemini-embedding-2/768/retrieval-asymmetric-v1`, disimpan sebagai
   `vector(768)`, dan dicari dengan exact cosine nearest-neighbor.
+- `POST /api/v1/chat` membangun konteks berbatas, memakai instruksi tutor berversi,
+  memvalidasi structured output, dan merakit sitasi hanya dari chunk yang benar-benar
+  dikirim. Model embedding serta data yang sudah diindeks tidak diubah.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

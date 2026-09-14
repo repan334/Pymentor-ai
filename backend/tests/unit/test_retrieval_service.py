@@ -56,10 +56,14 @@ class FakeSession:
 class EmptySearchSession:
     def __init__(self) -> None:
         self.queries = 0
+        self.rollbacks = 0
 
     def scalars(self, statement: Any) -> ScalarRows:
         self.queries += 1
         return ScalarRows([])
+
+    def rollback(self) -> None:
+        self.rollbacks += 1
 
 
 class FakeAdapter:
@@ -251,6 +255,7 @@ def test_no_eligible_corpus_does_not_embed_query() -> None:
     assert result.reason == "no_eligible_documents"
     assert adapter.query_calls == []
     assert session.queries == 1
+    assert session.rollbacks == 1
 
 
 def test_search_enforces_configured_query_and_document_id_limits() -> None:

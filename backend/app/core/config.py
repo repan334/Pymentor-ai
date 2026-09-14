@@ -71,6 +71,21 @@ class Settings(BaseSettings):
     max_search_query_characters: int = 2_000
     max_search_document_ids: int = 100
 
+    llm_provider: str = "gemini"
+    llm_model: str = "gemini-2.5-flash"
+    llm_prompt_version: str = "grounded-tutor-v1"
+    chat_request_timeout_seconds: int = 45
+    chat_max_attempts: int = 2
+    chat_retry_base_seconds: float = 0.5
+    chat_max_question_characters: int = 2_000
+    chat_max_document_ids: int = 100
+    chat_max_top_k: int = 8
+    chat_max_context_characters: int = 12_000
+    chat_max_context_chunk_characters: int = 4_000
+    chat_max_output_tokens: int = 2_048
+    chat_thinking_budget: int = 512
+    chat_temperature: float = 0.2
+
     database_url: SecretStr | None = None
     database_url_unpooled: SecretStr | None = None
     neon_branch: str | None = None
@@ -81,6 +96,9 @@ class Settings(BaseSettings):
         "embedding_provider",
         "embedding_model",
         "embedding_input_version",
+        "llm_provider",
+        "llm_model",
+        "llm_prompt_version",
     )
     @classmethod
     def validate_non_empty_text(cls, value: str) -> str:
@@ -116,6 +134,14 @@ class Settings(BaseSettings):
         "index_claim_timeout_seconds",
         "max_search_query_characters",
         "max_search_document_ids",
+        "chat_request_timeout_seconds",
+        "chat_max_attempts",
+        "chat_max_question_characters",
+        "chat_max_document_ids",
+        "chat_max_top_k",
+        "chat_max_context_characters",
+        "chat_max_context_chunk_characters",
+        "chat_max_output_tokens",
     )
     @classmethod
     def validate_positive_limit(cls, value: int) -> int:
@@ -130,11 +156,25 @@ class Settings(BaseSettings):
             raise ValueError("must be non-negative")
         return value
 
-    @field_validator("embedding_retry_base_seconds")
+    @field_validator("embedding_retry_base_seconds", "chat_retry_base_seconds")
     @classmethod
     def validate_retry_delay(cls, value: float) -> float:
         if value < 0:
             raise ValueError("must be non-negative")
+        return value
+
+    @field_validator("chat_thinking_budget")
+    @classmethod
+    def validate_thinking_budget(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("CHAT_THINKING_BUDGET must be non-negative")
+        return value
+
+    @field_validator("chat_temperature")
+    @classmethod
+    def validate_chat_temperature(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("CHAT_TEMPERATURE must be between 0 and 1")
         return value
 
     @model_validator(mode="after")
@@ -149,6 +189,20 @@ class Settings(BaseSettings):
             raise ValueError("EMBEDDING_MODEL must be 'gemini-embedding-2' in the Phase 5 profile")
         if self.embedding_dimensions != 768:
             raise ValueError("EMBEDDING_DIMENSIONS must be 768 for the database vector schema")
+        if self.llm_provider != "gemini":
+            raise ValueError("LLM_PROVIDER must be 'gemini' in the Phase 6 profile")
+        if self.llm_model != "gemini-2.5-flash":
+            raise ValueError("LLM_MODEL must be 'gemini-2.5-flash' in the Phase 6 profile")
+        if self.llm_prompt_version != "grounded-tutor-v1":
+            raise ValueError("LLM_PROMPT_VERSION must be 'grounded-tutor-v1'")
+        if self.chat_max_context_chunk_characters > self.chat_max_context_characters:
+            raise ValueError(
+                "CHAT_MAX_CONTEXT_CHUNK_CHARACTERS must not exceed CHAT_MAX_CONTEXT_CHARACTERS"
+            )
+        if self.chat_thinking_budget >= self.chat_max_output_tokens:
+            raise ValueError("CHAT_THINKING_BUDGET must be smaller than CHAT_MAX_OUTPUT_TOKENS")
+        if self.chat_max_top_k > 20:
+            raise ValueError("CHAT_MAX_TOP_K must not exceed the search contract maximum of 20")
         return self
 
     @property
@@ -166,8 +220,12 @@ class Settings(BaseSettings):
     def gemini_key_value(self) -> str:
         value = _read_secret(self.gemini_api_key, name="GEMINI_API_KEY")
         if value is None:
-            raise ValueError("GEMINI_API_KEY is required for Gemini embedding operations")
+            raise ValueError("GEMINI_API_KEY is required for Gemini operations")
         return value
+
+    @property
+    def llm_profile_key(self) -> str:
+        return ":".join((self.llm_provider, self.llm_model, self.llm_prompt_version))
 
     @property
     def max_upload_size_bytes(self) -> int:
