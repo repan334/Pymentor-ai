@@ -64,6 +64,7 @@ class GeminiEmbeddingAdapter:
             self._client = genai.Client(
                 api_key=key,
                 http_options=types.HttpOptions(
+                    api_version=self._settings.gemini_api_version,
                     timeout=self._settings.embedding_request_timeout_seconds * 1000,
                     retry_options=types.HttpRetryOptions(attempts=1),
                 ),

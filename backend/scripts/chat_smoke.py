@@ -46,6 +46,7 @@ def main() -> int:
 
     print(f"provider={settings.llm_provider}")
     print(f"model={settings.llm_model}")
+    print(f"api_version={settings.gemini_api_version}")
     print(f"prompt_version={settings.llm_prompt_version}")
     print(f"output_status={output_status or 'unavailable'}")
     print(f"validation={'passed' if valid else 'failed'}")

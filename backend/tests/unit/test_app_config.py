@@ -103,6 +103,7 @@ def test_phase_6_chat_profile_and_budgets_have_safe_defaults() -> None:
 
     assert settings.llm_provider == "gemini"
     assert settings.llm_model == "gemini-2.5-flash"
+    assert settings.gemini_api_version == "v1beta"
     assert settings.llm_profile_key == "gemini:gemini-2.5-flash:grounded-tutor-v1"
     assert settings.chat_thinking_budget < settings.chat_max_output_tokens
     assert settings.chat_max_context_chunk_characters <= settings.chat_max_context_characters
@@ -115,6 +116,7 @@ def test_phase_6_chat_profile_and_budgets_have_safe_defaults() -> None:
         {"llm_provider": "other"},
         {"llm_model": "another-model"},
         {"llm_prompt_version": "unknown"},
+        {"gemini_api_version": "v1"},
         {"chat_thinking_budget": 2048, "chat_max_output_tokens": 2048},
         {"chat_max_context_characters": 10, "chat_max_context_chunk_characters": 11},
         {"chat_max_top_k": 21},

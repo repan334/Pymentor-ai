@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-2"
     embedding_dimensions: int = 768
     embedding_input_version: str = "retrieval-asymmetric-v1"
+    gemini_api_version: str = "v1beta"
     gemini_api_key: SecretStr | None = None
     embedding_request_timeout_seconds: int = 30
     embedding_max_attempts: int = 3
@@ -96,6 +97,7 @@ class Settings(BaseSettings):
         "embedding_provider",
         "embedding_model",
         "embedding_input_version",
+        "gemini_api_version",
         "llm_provider",
         "llm_model",
         "llm_prompt_version",
@@ -189,6 +191,8 @@ class Settings(BaseSettings):
             raise ValueError("EMBEDDING_MODEL must be 'gemini-embedding-2' in the Phase 5 profile")
         if self.embedding_dimensions != 768:
             raise ValueError("EMBEDDING_DIMENSIONS must be 768 for the database vector schema")
+        if self.gemini_api_version != "v1beta":
+            raise ValueError("GEMINI_API_VERSION must be 'v1beta' for the configured Developer API")
         if self.llm_provider != "gemini":
             raise ValueError("LLM_PROVIDER must be 'gemini' in the Phase 6 profile")
         if self.llm_model != "gemini-2.5-flash":

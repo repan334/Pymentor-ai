@@ -9,6 +9,7 @@ Phase 6 memakai profil chat tunggal yang tervalidasi:
 | `LLM_PROVIDER` | `gemini` |
 | `LLM_MODEL` | `gemini-2.5-flash` |
 | `LLM_PROMPT_VERSION` | `grounded-tutor-v1` |
+| `GEMINI_API_VERSION` | `v1beta` |
 | `CHAT_MAX_QUESTION_CHARACTERS` | `2000` |
 | `CHAT_MAX_DOCUMENT_IDS` | `100` |
 | `CHAT_MAX_TOP_K` | `8` |
