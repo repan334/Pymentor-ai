@@ -87,6 +87,23 @@ class QuizView:
 
 
 @dataclass(frozen=True, slots=True)
+class QuizSummaryView:
+    id: int
+    topic_id: str | None
+    topic: str
+    question_count: int
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class QuizPage:
+    items: tuple[QuizSummaryView, ...]
+    total: int
+    limit: int
+    offset: int
+
+
+@dataclass(frozen=True, slots=True)
 class SubmittedAnswer:
     question_id: int
     option_id: int
@@ -125,3 +142,21 @@ class AttemptView:
     review: tuple[QuestionReview, ...]
     created_at: datetime
     idempotent_replay: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class AttemptSummaryView:
+    id: int
+    quiz_id: int
+    correct_count: int
+    question_count: int
+    percentage: float
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class AttemptPage:
+    items: tuple[AttemptSummaryView, ...]
+    total: int
+    limit: int
+    offset: int

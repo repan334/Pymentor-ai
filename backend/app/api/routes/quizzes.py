@@ -1,15 +1,17 @@
 from dataclasses import asdict
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Path, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Response, status
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.dependencies import get_quiz_service
 from app.api.schemas.documents import ErrorResponse
 from app.api.schemas.quizzes import (
     AttemptCreateRequest,
+    AttemptListResponse,
     AttemptResponse,
     QuizCreateRequest,
+    QuizListResponse,
     QuizResponse,
 )
 from app.chat.models import (
@@ -138,6 +140,36 @@ def create_quiz(
 
 
 @router.get(
+    "/quizzes",
+    response_model=QuizListResponse,
+    summary="List saved quiz snapshots without answer keys",
+    responses={422: _ERROR_RESPONSES[422], 503: _ERROR_RESPONSES[503]},
+)
+def list_quizzes(
+    service: Annotated[QuizService, Depends(get_quiz_service)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    topic_id: Annotated[
+        str | None,
+        Query(pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", max_length=64),
+    ] = None,
+    unassigned: bool = False,
+) -> QuizListResponse:
+    try:
+        result = service.list_quizzes(
+            limit=limit,
+            offset=offset,
+            topic_id=topic_id,
+            unassigned=unassigned,
+        )
+    except (QuizInputError, TopicInputError) as exc:
+        raise _error(422, exc.code, str(exc)) from exc
+    except SQLAlchemyError as exc:
+        raise _error(503, "database_unavailable", "Quiz storage is unavailable") from exc
+    return QuizListResponse(**asdict(result))
+
+
+@router.get(
     "/quizzes/{quiz_id}",
     response_model=QuizResponse,
     summary="Read a quiz without answer keys or explanations",
@@ -187,6 +219,27 @@ def submit_attempt(
     if result.idempotent_replay:
         response.status_code = status.HTTP_200_OK
     return AttemptResponse(**asdict(result))
+
+
+@router.get(
+    "/quiz-attempts",
+    response_model=AttemptListResponse,
+    summary="List saved attempt summaries",
+    responses={422: _ERROR_RESPONSES[422], 503: _ERROR_RESPONSES[503]},
+)
+def list_attempts(
+    service: Annotated[QuizService, Depends(get_quiz_service)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    quiz_id: Annotated[int | None, Query(gt=0)] = None,
+) -> AttemptListResponse:
+    try:
+        result = service.list_attempts(limit=limit, offset=offset, quiz_id=quiz_id)
+    except AttemptInputError as exc:
+        raise _error(422, exc.code, str(exc)) from exc
+    except SQLAlchemyError as exc:
+        raise _error(503, "database_unavailable", "Quiz storage is unavailable") from exc
+    return AttemptListResponse(**asdict(result))
 
 
 @router.get(

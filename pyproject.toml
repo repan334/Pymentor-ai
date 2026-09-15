@@ -8,12 +8,14 @@ dependencies = [
     "alembic>=1.16,<2.0",
     "fastapi>=0.115,<1.0",
     "google-genai>=1.0,<2.0",
+    "httpx>=0.28,<1.0",
     "pgvector>=0.3,<1.0",
     "psycopg[binary]>=3.2,<4.0",
     "pydantic-settings>=2.10,<3.0",
     "pypdf>=6.0,<7.0",
     "python-multipart>=0.0.20,<1.0",
     "sqlalchemy>=2.0,<3.0",
+    "streamlit>=1.50,<2.0",
     "uvicorn>=0.34,<1.0",
 ]
 
@@ -37,7 +39,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pytest.ini_options]
-pythonpath = ["backend"]
+pythonpath = ["backend", "."]
 testpaths = ["backend/tests"]
 markers = [
     "integration: exercises the configured remote database",

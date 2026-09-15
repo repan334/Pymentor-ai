@@ -61,6 +61,11 @@ Respons HTTP 201 dan `GET /api/v1/quizzes/{quiz_id}` hanya memuat ID, pertanyaan
 serta opsi. Keduanya sengaja tidak menampilkan `correct_option_id`, `is_correct`,
 explanation, atau sumber.
 
+`GET /api/v1/quizzes?limit=20&offset=0` menyediakan daftar metadata snapshot publik
+untuk navigasi UI. Filter `topic_id` memilih satu topik, sedangkan
+`unassigned=true` memilih quiz legacy tanpa assignment; keduanya tidak boleh
+digabung. Endpoint daftar tidak memuat pertanyaan, kunci, explanation, atau sumber.
+
 ### Menilai attempt
 
 ```http
@@ -93,6 +98,10 @@ Hasil lama dapat dibaca melalui:
 ```http
 GET /api/v1/quiz-attempts/{attempt_id}
 ```
+
+`GET /api/v1/quiz-attempts?limit=20&offset=0` menyediakan ringkasan hasil tersimpan
+dan dapat difilter dengan `quiz_id`. Review lengkap tetap hanya dibaca melalui ID
+attempt yang sudah final.
 
 Error utama: 404 untuk quiz/attempt tidak ada, 409 untuk konflik idempotency, 422
 untuk input atau konteks tidak cukup, 429 untuk kuota, 502 untuk output provider

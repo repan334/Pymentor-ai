@@ -170,6 +170,26 @@ Lihat [panduan quiz](docs/QUIZZES.md) untuk submit/replay dan
 hasil aktual.
 Lihat [panduan topic progress](docs/TOPIC-PROGRESS.md).
 
+## Menjalankan Frontend Lokal
+
+Jalankan API dan Streamlit pada dua terminal PowerShell 5.1. Frontend hanya menerima
+alamat API dan tidak memerlukan connection string atau key model:
+
+```powershell
+# Terminal 1
+$env:UV_CACHE_DIR = "D:\uv-cache"
+uv run uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+
+# Terminal 2
+$env:UV_CACHE_DIR = "D:\uv-cache"
+$env:API_BASE_URL = "http://127.0.0.1:8000/api/v1"
+uv run streamlit run frontend\app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Buka `http://127.0.0.1:8501`. Hentikan masing-masing server dengan `Ctrl+C`.
+Alur UI, batas state sesi, dan acceptance checklist ada di
+[panduan frontend](docs/FRONTEND.md).
+
 ## Status Proyek
 
 Phase 1 sampai Phase 6 selesai dan telah diverifikasi pada 14 September 2026.
@@ -197,4 +217,6 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   kuota: 6 request sukses, 1 error kuota, dan 9/16 kasus belum dijalankan.
 - Phase 8 menambahkan topic ID stabil, assignment quiz, score latihan dari attempt
   terbaru per quiz, dan rekomendasi berbasis aturan tanpa model call atau counter.
+- Phase 9 menyediakan UI Streamlit lokal untuk materi, tutor, quiz, dan progres melalui
+  satu HTTP client FastAPI. UI tidak memiliki akses database atau provider langsung.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

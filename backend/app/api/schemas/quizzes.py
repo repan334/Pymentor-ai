@@ -50,6 +50,21 @@ class QuizResponse(BaseModel):
     created_at: datetime
 
 
+class QuizSummaryResponse(BaseModel):
+    id: int
+    topic_id: str | None
+    topic: str
+    question_count: int
+    created_at: datetime
+
+
+class QuizListResponse(BaseModel):
+    items: list[QuizSummaryResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class AnswerSubmission(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -93,3 +108,19 @@ class AttemptResponse(BaseModel):
     review: list[QuestionReviewResponse]
     created_at: datetime
     idempotent_replay: bool
+
+
+class AttemptSummaryResponse(BaseModel):
+    id: int
+    quiz_id: int
+    correct_count: int
+    question_count: int
+    percentage: float
+    created_at: datetime
+
+
+class AttemptListResponse(BaseModel):
+    items: list[AttemptSummaryResponse]
+    total: int
+    limit: int
+    offset: int

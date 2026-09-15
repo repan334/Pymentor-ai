@@ -6,7 +6,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from hashlib import sha256
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -26,6 +26,8 @@ from app.progress.service import validate_topic_id
 from app.quiz.models import (
     AttemptInputError,
     AttemptNotFound,
+    AttemptPage,
+    AttemptSummaryView,
     AttemptView,
     GeneratedQuizOutput,
     IdempotencyConflict,
@@ -36,8 +38,10 @@ from app.quiz.models import (
     QuizNotFound,
     QuizOptionView,
     QuizOutputInvalid,
+    QuizPage,
     QuizQuestionView,
     QuizSourceView,
+    QuizSummaryView,
     QuizView,
     SubmittedAnswer,
 )
@@ -149,6 +153,37 @@ class QuizService:
         quiz = self._load_quiz(quiz_id)
         return _quiz_view(quiz)
 
+    def list_quizzes(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        topic_id: str | None = None,
+        unassigned: bool = False,
+    ) -> QuizPage:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise QuizInputError("Pagination is outside the allowed range")
+        if topic_id is not None:
+            topic_id = validate_topic_id(topic_id)
+        if topic_id is not None and unassigned:
+            raise QuizInputError("topic_id and unassigned=true cannot be combined")
+
+        filters = []
+        if topic_id is not None:
+            filters.append(Quiz.topic_id == topic_id)
+        elif unassigned:
+            filters.append(Quiz.topic_id.is_(None))
+        total = self.session.scalar(select(func.count(Quiz.id)).where(*filters)) or 0
+        quizzes = self.session.scalars(
+            select(Quiz).where(*filters).order_by(Quiz.id.desc()).limit(limit).offset(offset)
+        ).all()
+        return QuizPage(
+            items=tuple(_quiz_summary_view(quiz) for quiz in quizzes),
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+
     def submit_attempt(
         self,
         *,
@@ -234,6 +269,31 @@ class QuizService:
             percentage=float(attempt.percentage),
             review=tuple(review),
             created_at=attempt.created_at,
+        )
+
+    def list_attempts(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        quiz_id: int | None = None,
+    ) -> AttemptPage:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise AttemptInputError("Pagination is outside the allowed range")
+        filters = [] if quiz_id is None else [QuizAttempt.quiz_id == quiz_id]
+        total = self.session.scalar(select(func.count(QuizAttempt.id)).where(*filters)) or 0
+        attempts = self.session.scalars(
+            select(QuizAttempt)
+            .where(*filters)
+            .order_by(QuizAttempt.id.desc())
+            .limit(limit)
+            .offset(offset)
+        ).all()
+        return AttemptPage(
+            items=tuple(_attempt_summary_view(attempt) for attempt in attempts),
+            total=total,
+            limit=limit,
+            offset=offset,
         )
 
     def _validate_create_input(
@@ -416,6 +476,27 @@ def _quiz_view(quiz: Quiz) -> QuizView:
             for question in quiz.questions
         ),
         created_at=quiz.created_at,
+    )
+
+
+def _quiz_summary_view(quiz: Quiz) -> QuizSummaryView:
+    return QuizSummaryView(
+        id=quiz.id,
+        topic_id=quiz.topic_id,
+        topic=quiz.topic,
+        question_count=quiz.question_count,
+        created_at=quiz.created_at,
+    )
+
+
+def _attempt_summary_view(attempt: QuizAttempt) -> AttemptSummaryView:
+    return AttemptSummaryView(
+        id=attempt.id,
+        quiz_id=attempt.quiz_id,
+        correct_count=attempt.correct_count,
+        question_count=attempt.total_questions,
+        percentage=float(attempt.percentage),
+        created_at=attempt.created_at,
     )
 
 

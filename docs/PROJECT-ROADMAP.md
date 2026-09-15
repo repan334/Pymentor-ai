@@ -174,11 +174,19 @@ tidak ada kuota inference yang digunakan pada fase ini. Lihat
 
 ### Phase 9 — Streamlit Interface
 
-- Document upload.
-- Tutor chat.
-- Quiz interface.
-- Progress dashboard.
-- API client.
+- [x] Document upload, pagination, explicit indexing, and source/chunk inspection.
+- [x] Standalone grounded tutor UI with explicit document scope and citations.
+- [x] Topic/quiz creation, draft preservation, idempotent submission, and saved results.
+- [x] Derived progress dashboard and explicit legacy-topic assignment.
+- [x] Single configurable FastAPI HTTP client with bounded timeouts and safe errors.
+- [x] Deterministic HTTP-client/state tests and Streamlit AppTest coverage.
+
+Phase 9 selesai sebagai frontend lokal pada `frontend/app.py`. UI tidak mengimpor
+service backend, tidak mengakses database/provider, dan tidak menghitung score atau
+recommendation. Mutation hanya dijalankan oleh aksi eksplisit. Draft bertahan selama
+sesi Streamlit, sedangkan hasil persisten dapat dimuat ulang dari API. Sembilan kasus
+evaluasi Phase 7 tetap pending; tidak ada inference atau reindexing pada fase ini.
+Lihat `docs/FRONTEND.md`.
 
 ### Phase 10 — Evaluation and Testing
 

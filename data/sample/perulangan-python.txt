@@ -1,0 +1,9 @@
+Perulangan Python
+
+Perulangan for digunakan untuk melakukan iterasi atas iterable.
+
+list(range(3)) menghasilkan [0, 1, 2].
+Batas akhir range tidak disertakan.
+
+break keluar dari perulangan terdekat.
+continue melewati sisa iterasi saat ini dan melanjutkan iterasi berikutnya.

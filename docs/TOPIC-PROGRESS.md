@@ -45,6 +45,11 @@ adaptif.
 - `PUT /api/v1/quizzes/{quiz_id}/topic`: assign/reassign tanpa mengubah snapshot quiz.
 - `GET /api/v1/topics/{topic_id}/progress`: score, evidence, dan recommendation.
 
+Frontend Progres memakai `GET /quizzes?unassigned=true` untuk menampilkan assignment
+yang masih perlu diputuskan. Sebelum assignment eksplisit, UI menjelaskan bahwa
+seluruh histori attempt quiz akan dihitung pada topic tujuan; snapshot quiz tidak
+diubah.
+
 Membuat topic dan mencoba progress dari PowerShell 5.1:
 
 ```powershell

@@ -141,6 +141,16 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
             assert wrong.correct_count == 0
             assert wrong.percentage == 0.0
 
+            quiz_page = service.list_quizzes(
+                limit=10, offset=0, topic_id=topic, unassigned=False
+            )
+            attempt_page = service.list_attempts(limit=10, offset=0, quiz_id=quiz_id)
+            assert quiz_page.total == 1
+            assert quiz_page.items[0].id == quiz_id
+            assert quiz_page.items[0].topic_id == topic
+            assert attempt_page.total == 2
+            assert {item.id for item in attempt_page.items} == {first.id, wrong.id}
+
             duplicate = QuizAttempt(
                 quiz_id=quiz_id,
                 idempotency_key="same-key",

@@ -4,7 +4,8 @@
 
 Phase 2 menyediakan fondasi HTTP lokal, Phase 4 menambahkan ingestion, Phase 5
 menambahkan indexing serta semantic retrieval, Phase 6 menambahkan tutor grounded,
-Phase 7 menambahkan quiz snapshot/scoring, dan Phase 8 menambahkan topic progress:
+Phase 7 menambahkan quiz snapshot/scoring, Phase 8 menambahkan topic progress, dan
+Phase 9 menambahkan endpoint baca minimum untuk navigasi frontend:
 
 - entrypoint ASGI `app.main:app`;
 - application factory `create_app()` untuk konfigurasi tes yang terisolasi;
@@ -210,8 +211,10 @@ Detail alur, contoh respons, dan keterbatasan ada di `docs/RAG-TUTOR.md`.
 
 ```http
 POST /api/v1/quizzes
+GET /api/v1/quizzes?limit=20&offset=0&topic_id=python-functions&unassigned=false
 GET /api/v1/quizzes/{quiz_id}
 POST /api/v1/quizzes/{quiz_id}/attempts
+GET /api/v1/quiz-attempts?limit=20&offset=0&quiz_id=10
 GET /api/v1/quiz-attempts/{attempt_id}
 ```
 
@@ -232,6 +235,12 @@ menghasilkan HTTP 201; key sama dengan payload berbeda menghasilkan 409. Error l
 404 tidak ditemukan, 422 input/konteks tidak cukup, 429 kuota, 502 output model tidak
 valid, dan 503 database/provider tidak tersedia. Kontrak lengkap dan contoh
 PowerShell ada di `docs/QUIZZES.md`.
+
+Daftar quiz hanya mengembalikan metadata snapshot publik dan tidak pernah memuat
+kunci, explanation, atau sumber. `unassigned=true` memilih quiz legacy dengan
+`topic_id=null`; parameter itu tidak boleh digabung dengan `topic_id`. Daftar attempt
+hanya memuat ringkasan nilai. Review lengkap tetap dibuka melalui
+`GET /quiz-attempts/{attempt_id}` setelah attempt sudah tersimpan.
 
 ## Topic progress contracts
 
