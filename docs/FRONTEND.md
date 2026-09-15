@@ -42,8 +42,10 @@ di masing-masing terminal untuk berhenti.
    pilihan mempertahankan semantik `null`, daftar ID, dan `[]` dari backend. Setiap
    request berdiri sendiri; tidak ada riwayat percakapan.
 3. **Kuis:** buat/pilih topic, tentukan scope dan jumlah soal, lalu generate secara
-   eksplisit. Kunci tidak dimuat sebelum submit. Semua soal wajib dijawab. Hasil,
-   pembahasan, dan sumber berasal dari server dan dapat dibuka kembali.
+   eksplisit. UI tidak mengirim field difficulty sehingga backend memakai turunan
+   adaptif dari progress topic. Kunci tidak dimuat sebelum submit. Semua soal wajib
+   dijawab. Hasil, pembahasan, dan sumber berasal dari server dan dapat dibuka
+   kembali.
 4. **Progres:** lihat score latihan, evidence, dan rekomendasi backend. Assignment quiz
    legacy bersifat eksplisit karena memindahkan kontribusi histori ke topic tujuan.
 

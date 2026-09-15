@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
+
+Difficulty = Literal["basic", "intermediate", "advanced"]
 
 
 class QuizCreateRequest(BaseModel):
@@ -11,6 +13,7 @@ class QuizCreateRequest(BaseModel):
     topic: str
     document_ids: list[PositiveInt] | None = None
     question_count: int = Field(default=3, ge=1, le=5)
+    difficulty: Difficulty | None = None
 
     @field_validator("topic")
     @classmethod
@@ -46,6 +49,7 @@ class QuizResponse(BaseModel):
     topic_id: str | None
     topic: str
     question_count: int
+    difficulty: str | None
     questions: list[QuizQuestionResponse]
     created_at: datetime
 
@@ -55,6 +59,7 @@ class QuizSummaryResponse(BaseModel):
     topic_id: str | None
     topic: str
     question_count: int
+    difficulty: str | None
     created_at: datetime
 
 

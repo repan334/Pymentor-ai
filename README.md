@@ -162,6 +162,10 @@ $quiz = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/quizze
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/topics/python-functions/progress"
 ```
 
+Field `difficulty` (`basic`/`intermediate`/`advanced`) bersifat opsional; jika
+dihilangkan, backend menurunkannya dari progress topic tanpa model call dan
+menyimpannya pada quiz.
+
 Respons create/get quiz menyembunyikan kunci; kunci, explanation, dan sumber baru
 dibuka setelah semua soal disubmit dengan idempotency key.
 
@@ -192,7 +196,7 @@ Alur UI, batas state sesi, dan acceptance checklist ada di
 
 ## Status Proyek
 
-Phase 1 sampai Phase 6 selesai dan telah diverifikasi pada 14 September 2026.
+Phase 1 sampai Phase 9 selesai dan telah diverifikasi per 15 September 2026.
 Model chat
 dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
 `gemini-3.6-flash`; embedding dan indeks tidak berubah.
@@ -202,7 +206,7 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   melakukan koneksi database saat import atau startup.
 - SQLAlchemy 2 menggunakan Psycopg 3 dan membaca konfigurasi dari environment,
   `.env`, atau `.env.local`.
-- Alembic berada pada revision `20260914_0005`.
+- Alembic berada pada revision `20260914_0006`.
 - API ingestion mendukung UTF-8 TXT/Markdown dan PDF berbasis teks, menyimpan teks
   acuan serta chunk secara atomik, dan mengembalikan dokumen lama untuk upload
   identik tanpa menggandakan chunk.
@@ -217,6 +221,10 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   kuota: 6 request sukses, 1 error kuota, dan 9/16 kasus belum dijalankan.
 - Phase 8 menambahkan topic ID stabil, assignment quiz, score latihan dari attempt
   terbaru per quiz, dan rekomendasi berbasis aturan tanpa model call atau counter.
+- Difficulty adaptif Phase 8 selesai pada 15 September 2026: prompt quiz
+  `grounded-quiz-v2` menerima `basic`/`intermediate`/`advanced`, nilai dihilangkan
+  berarti turunan rule-based dari progress topic, dan quiz legacy tetap
+  `difficulty=null`. Verifikasi live lulus dengan satu quiz difficulty turunan.
 - Phase 9 menyediakan UI Streamlit lokal untuk materi, tutor, quiz, dan progres melalui
   satu HTTP client FastAPI. UI tidak memiliki akses database atau provider langsung.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

@@ -194,6 +194,10 @@ class Quiz(Base):
     __table_args__ = (
         CheckConstraint("question_count BETWEEN 1 AND 5", name="quiz_question_count_range"),
         CheckConstraint("length(btrim(topic)) > 0", name="quiz_topic_not_blank"),
+        CheckConstraint(
+            "difficulty IS NULL OR difficulty IN ('basic', 'intermediate', 'advanced')",
+            name="quiz_difficulty_valid",
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -202,6 +206,7 @@ class Quiz(Base):
     )
     topic: Mapped[str] = mapped_column(String(500), nullable=False)
     question_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    difficulty: Mapped[str | None] = mapped_column(String(16), nullable=True)
     document_ids: Mapped[list[int] | None] = mapped_column(JSONB)
     llm_provider: Mapped[str] = mapped_column(String(40), nullable=False)
     llm_model: Mapped[str] = mapped_column(String(120), nullable=False)

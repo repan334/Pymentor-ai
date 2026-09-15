@@ -82,6 +82,7 @@ class QuizView:
     topic_id: str | None
     topic: str
     question_count: int
+    difficulty: str | None
     questions: tuple[QuizQuestionView, ...]
     created_at: datetime
 
@@ -92,6 +93,7 @@ class QuizSummaryView:
     topic_id: str | None
     topic: str
     question_count: int
+    difficulty: str | None
     created_at: datetime
 
 

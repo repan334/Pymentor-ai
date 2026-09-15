@@ -1,4 +1,5 @@
 from decimal import Decimal
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -21,9 +22,35 @@ class FakeSession:
     def __init__(self) -> None:
         self.added: list[Any] = []
         self.rollbacks = 0
+        self._next_id = 1
 
     def add(self, value: Any) -> None:
         self.added.append(value)
+
+    def add_all(self, values: Any) -> None:
+        self.added.extend(values)
+
+    def flush(self) -> None:
+        for item in self.added:
+            if getattr(item, "id", None) is None:
+                item.id = self._next_id
+                self._next_id += 1
+
+    def commit(self) -> None:
+        self.flush()
+        for item in self.added:
+            if isinstance(item, Quiz):
+                item.questions = [
+                    other
+                    for other in self.added
+                    if isinstance(other, QuizQuestion) and other.quiz_id == item.id
+                ]
+            if isinstance(item, QuizQuestion):
+                item.options = [
+                    other
+                    for other in self.added
+                    if isinstance(other, QuizOption) and other.question_id == item.id
+                ]
 
     def rollback(self) -> None:
         self.rollbacks += 1
@@ -32,6 +59,19 @@ class FakeSession:
         if model is Topic:
             return Topic(id=identity, display_name="Fungsi", normalized_name="fungsi")
         return None
+
+    def scalar(self, statement: Any) -> Any:
+        return next((item for item in self.added if isinstance(item, Quiz)), None)
+
+
+class FakeProgressService:
+    def __init__(self, recommendation: str) -> None:
+        self.recommendation = recommendation
+        self.calls = 0
+
+    def get_progress(self, topic_id: str) -> Any:
+        self.calls += 1
+        return SimpleNamespace(recommendation=self.recommendation)
 
 
 class FakeSearch:
@@ -94,8 +134,18 @@ def _output(**overrides: Any) -> GeneratedQuizOutput:
     return GeneratedQuizOutput(**values)
 
 
-def _service(output: GeneratedQuizOutput | Exception, *hits: SearchHit) -> QuizService:
-    return QuizService(FakeSession(), FakeSearch(tuple(hits)), FakeChat(output), _settings())
+def _service(
+    output: GeneratedQuizOutput | Exception,
+    *hits: SearchHit,
+    progress_recommendation: str = "insufficient_evidence",
+) -> QuizService:
+    return QuizService(
+        FakeSession(),
+        FakeSearch(tuple(hits)),
+        FakeChat(output),
+        _settings(),
+        progress_service=FakeProgressService(progress_recommendation),
+    )
 
 
 def test_empty_corpus_and_model_insufficient_never_persist_partial_quiz() -> None:
@@ -197,6 +247,35 @@ def test_provider_error_occurs_before_any_database_write() -> None:
             topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
         )
     assert service.session.added == []
+
+
+def test_derived_difficulty_flows_into_prompt_and_snapshot() -> None:
+    service = _service(_output(), _hit(), progress_recommendation="try_advanced")
+    result = service.create_quiz(
+        topic_id="python-functions", topic="fungsi", document_ids=[2], question_count=1
+    )
+
+    assert result.difficulty == "advanced"
+    assert '"DIFFICULTY":"advanced"' in service.chat_adapter.calls[0]["prompt"]
+    quiz = next(item for item in service.session.added if isinstance(item, Quiz))
+    assert quiz.difficulty == "advanced"
+
+
+def test_explicit_difficulty_overrides_derivation_without_progress_query() -> None:
+    service = _service(_output(), _hit(), progress_recommendation="try_advanced")
+    result = service.create_quiz(
+        topic_id="python-functions",
+        topic="fungsi",
+        document_ids=[2],
+        question_count=1,
+        difficulty="basic",
+    )
+
+    assert result.difficulty == "basic"
+    assert service.progress_service.calls == 0
+    assert '"DIFFICULTY":"basic"' in service.chat_adapter.calls[0]["prompt"]
+    quiz = next(item for item in service.session.added if isinstance(item, Quiz))
+    assert quiz.difficulty == "basic"
 
 
 def _quiz_graph() -> Quiz:

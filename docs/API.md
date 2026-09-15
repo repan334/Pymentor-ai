@@ -218,17 +218,20 @@ GET /api/v1/quiz-attempts?limit=20&offset=0&quiz_id=10
 GET /api/v1/quiz-attempts/{attempt_id}
 ```
 
-Create menerima `topic_id`, `topic`, `document_ids`, dan `question_count` (default 3,
-maksimum 5). `topic_id` adalah slug stabil yang sudah terdaftar. Scope dokumen sama
-dengan search/chat: properti yang dihilangkan berarti seluruh
-corpus eligible, sedangkan `[]` berarti corpus kosong. Jika konteks/model tidak dapat
-menghasilkan tepat jumlah soal yang diminta, tidak ada quiz parsial yang disimpan.
+Create menerima `topic_id`, `topic`, `document_ids`, `question_count` (default 3,
+maksimum 5), dan `difficulty` opsional (`basic`/`intermediate`/`advanced`).
+`topic_id` adalah slug stabil yang sudah terdaftar. `difficulty` yang dihilangkan
+diturunkan backend dari progress topic tanpa model call; nilai eksplisit tetap
+dipakai. Scope dokumen sama dengan search/chat: properti yang dihilangkan berarti
+seluruh corpus eligible, sedangkan `[]` berarti corpus kosong. Jika konteks/model
+tidak dapat menghasilkan tepat jumlah soal yang diminta, tidak ada quiz parsial
+yang disimpan.
 
-Create/get sebelum submit hanya mengembalikan pertanyaan serta empat opsi; kunci,
-flag benar, explanation, dan sumber tidak diserialisasi. Submit wajib memakai header
-`Idempotency-Key` dan menjawab semua soal tepat sekali. Backend menilai dari snapshot
-kunci database, membulatkan persentase half-up ke dua desimal, lalu membuka review
-per soal beserta snapshot sumber.
+Create/get sebelum submit hanya mengembalikan difficulty efektif, pertanyaan, serta
+empat opsi; kunci, flag benar, explanation, dan sumber tidak diserialisasi. Submit
+wajib memakai header `Idempotency-Key` dan menjawab semua soal tepat sekali. Backend
+menilai dari snapshot kunci database, membulatkan persentase half-up ke dua desimal,
+lalu membuka review per soal beserta snapshot sumber.
 
 Replay key+payload yang sama menghasilkan HTTP 200 dan attempt lama; request baru
 menghasilkan HTTP 201; key sama dengan payload berbeda menghasilkan 409. Error lain:

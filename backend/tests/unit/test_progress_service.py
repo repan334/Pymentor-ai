@@ -2,7 +2,11 @@ from decimal import Decimal
 
 import pytest
 from app.progress.models import TopicInputError
-from app.progress.service import calculate_topic_progress, validate_topic_id
+from app.progress.service import (
+    calculate_topic_progress,
+    derive_difficulty,
+    validate_topic_id,
+)
 
 
 @pytest.mark.parametrize(
@@ -33,6 +37,21 @@ def test_progress_rounding_evidence_and_recommendation_boundaries(
 def test_progress_rejects_inconsistent_counts(correct: int, total: int) -> None:
     with pytest.raises(ValueError):
         calculate_topic_progress(correct_questions=correct, counted_questions=total)
+
+
+@pytest.mark.parametrize(
+    ("recommendation", "difficulty"),
+    [
+        ("insufficient_evidence", "basic"),
+        ("review_material", "basic"),
+        ("practice_more", "intermediate"),
+        ("try_advanced", "advanced"),
+    ],
+)
+def test_difficulty_derivation_is_rule_based_without_model_call(
+    recommendation: str, difficulty: str
+) -> None:
+    assert derive_difficulty(recommendation) == difficulty
 
 
 @pytest.mark.parametrize(

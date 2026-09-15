@@ -101,6 +101,7 @@ def test_live_http_contract_create_get_submit_result_and_replay() -> None:
 
         assert created.status_code == 201
         assert fetched.json() == quiz
+        assert quiz["difficulty"] == "basic"
         assert "correct_option_id" not in created.text
         assert len(question["options"]) == 4
         assert len({option["text"].casefold() for option in question["options"]}) == 4

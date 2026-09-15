@@ -21,8 +21,8 @@ from app.db.models import (
     QuizQuestionSource,
     Topic,
 )
-from app.progress.models import TopicNotFound
-from app.progress.service import validate_topic_id
+from app.progress.models import Difficulty, TopicNotFound
+from app.progress.service import ProgressService, derive_difficulty, validate_topic_id
 from app.quiz.models import (
     AttemptInputError,
     AttemptNotFound,
@@ -56,11 +56,13 @@ class QuizService:
         search_service: SearchService,
         chat_adapter: QuizGenerationAdapter,
         settings: Settings,
+        progress_service: ProgressService | None = None,
     ) -> None:
         self.session = session
         self.search_service = search_service
         self.chat_adapter = chat_adapter
         self.settings = settings
+        self.progress_service = progress_service
 
     def create_quiz(
         self,
@@ -69,10 +71,14 @@ class QuizService:
         topic: str,
         document_ids: Sequence[int] | None,
         question_count: int,
+        difficulty: Difficulty | None = None,
     ) -> QuizView:
         topic_id = validate_topic_id(topic_id)
         self._validate_create_input(topic, document_ids, question_count)
         self._require_generation_topic(topic_id)
+        effective_difficulty = (
+            difficulty if difficulty is not None else self._derive_difficulty(topic_id)
+        )
         search = self.search_service.search(
             query=topic,
             top_k=self.settings.quiz_retrieval_top_k,
@@ -85,7 +91,12 @@ class QuizService:
             raise QuizInsufficientContext("No usable source context is available")
 
         output = self.chat_adapter.generate_structured(
-            prompt=build_quiz_prompt(topic, question_count, sources),
+            prompt=build_quiz_prompt(
+                topic,
+                question_count,
+                sources,
+                difficulty=effective_difficulty,
+            ),
             system_instruction=QUIZ_SYSTEM_INSTRUCTION,
             response_model=GeneratedQuizOutput,
             max_output_tokens=self.settings.quiz_max_output_tokens,
@@ -98,6 +109,7 @@ class QuizService:
                 topic_id=topic_id,
                 topic=topic,
                 question_count=question_count,
+                difficulty=effective_difficulty,
                 document_ids=None if document_ids is None else list(document_ids),
                 llm_provider=self.settings.llm_provider,
                 llm_model=self.settings.llm_model,
@@ -315,6 +327,12 @@ class QuizService:
             raise TopicNotFound(topic_id)
         self.session.rollback()
 
+    def _derive_difficulty(self, topic_id: str) -> Difficulty:
+        progress_service = self.progress_service or ProgressService(self.session)
+        progress = progress_service.get_progress(topic_id)
+        self.session.rollback()
+        return derive_difficulty(progress.recommendation)
+
     def _build_context(
         self,
         hits: Sequence[SearchHit],
@@ -465,6 +483,7 @@ def _quiz_view(quiz: Quiz) -> QuizView:
         topic_id=quiz.topic_id,
         topic=quiz.topic,
         question_count=quiz.question_count,
+        difficulty=quiz.difficulty,
         questions=tuple(
             QuizQuestionView(
                 id=question.id,
@@ -485,6 +504,7 @@ def _quiz_summary_view(quiz: Quiz) -> QuizSummaryView:
         topic_id=quiz.topic_id,
         topic=quiz.topic,
         question_count=quiz.question_count,
+        difficulty=quiz.difficulty,
         created_at=quiz.created_at,
     )
 

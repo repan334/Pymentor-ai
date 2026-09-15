@@ -30,6 +30,7 @@ class FakeListService:
                     topic_id=None if kwargs.get("unassigned") else "python-functions",
                     topic="fungsi Python",
                     question_count=3,
+                    difficulty=None if kwargs.get("unassigned") else "basic",
                     created_at=now,
                 ),
             ),
@@ -82,6 +83,7 @@ def test_list_quizzes_supports_unassigned_filter_without_answer_keys() -> None:
             "topic_id": None,
             "topic": "fungsi Python",
             "question_count": 3,
+            "difficulty": None,
             "created_at": "2026-09-14T00:00:00Z",
         }
     ]

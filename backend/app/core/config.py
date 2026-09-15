@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     chat_thinking_budget: int = 512
     chat_temperature: float = 0.2
 
-    quiz_prompt_version: str = "grounded-quiz-v1"
+    quiz_prompt_version: str = "grounded-quiz-v2"
     quiz_max_topic_characters: int = 500
     quiz_max_question_count: int = 5
     quiz_retrieval_top_k: int = 8
@@ -215,8 +215,8 @@ class Settings(BaseSettings):
             raise ValueError("LLM_MODEL must be 'gemini-3.6-flash' in the active chat profile")
         if self.llm_prompt_version != "grounded-tutor-v2":
             raise ValueError("LLM_PROMPT_VERSION must be 'grounded-tutor-v2'")
-        if self.quiz_prompt_version != "grounded-quiz-v1":
-            raise ValueError("QUIZ_PROMPT_VERSION must be 'grounded-quiz-v1'")
+        if self.quiz_prompt_version != "grounded-quiz-v2":
+            raise ValueError("QUIZ_PROMPT_VERSION must be 'grounded-quiz-v2'")
         if self.chat_max_context_chunk_characters > self.chat_max_context_characters:
             raise ValueError(
                 "CHAT_MAX_CONTEXT_CHUNK_CHARACTERS must not exceed CHAT_MAX_CONTEXT_CHARACTERS"

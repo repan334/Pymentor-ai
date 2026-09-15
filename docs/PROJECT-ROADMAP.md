@@ -148,7 +148,8 @@ probabilistik. Lihat
 - [x] Complete-answer validation and backend scoring with review explanations.
 - [x] Idempotent attempt submission protected by PostgreSQL constraints.
 - [x] Deterministic, Neon, and bounded Gemini HTTP verification.
-- [ ] Adaptive difficulty levels (explicitly deferred to Phase 8).
+- [x] Adaptive difficulty levels (deferred to Phase 8; completed there as derivation plus
+  `grounded-quiz-v2`).
 
 Implementasi Phase 7 selesai dan quiz live lulus dengan `gemini-3.6-flash`. Evaluasi
 awal menyiapkan 8 development + 8
@@ -164,13 +165,19 @@ hasil tidak diklaim sebagai benchmark penuh. Lihat `docs/QUIZZES.md` dan
 - [x] Evidence threshold and rule-based learning recommendation.
 - [x] Legacy exact-name assignment with ambiguous quizzes left unassigned.
 - [x] Deterministic and PostgreSQL verification for isolation, replay, and boundaries.
+- [x] Adaptive difficulty generation (derivation tanpa model call plus prompt
+  `grounded-quiz-v2`; lihat `docs/QUIZZES.md`).
 - [ ] Scientifically validated mastery model (not claimed by this MVP).
-- [ ] Adaptive difficulty generation (deferred; no model call added in Phase 8).
 
-Phase 8 MVP selesai pada revision `20260914_0005`. Score menggambarkan performa
-latihan, bukan mastery tervalidasi. Sembilan kasus evaluasi Phase 7 tetap pending dan
-tidak ada kuota inference yang digunakan pada fase ini. Lihat
-`docs/TOPIC-PROGRESS.md`.
+Phase 8 MVP selesai pada revision `20260914_0005` dan difficulty adaptif dilengkapi
+pada revision `20260914_0006` tanggal 2026-09-15. Difficulty bersifat tiga tingkat
+(`basic`, `intermediate`, `advanced`); saat create quiz tidak menyebut difficulty,
+backend menurunkannya dari progress topic dengan aturan murni berbasis bukti — tanpa
+model call untuk keputusan adaptif. Nilai eksplisit dari client tetap dihormati.
+Quiz legacy tetap `difficulty=null` karena tingkatnya tidak diketahui. Score
+menggambarkan performa latihan, bukan mastery tervalidasi. Sembilan kasus evaluasi
+Phase 7 tetap pending; verifikasi live quiz memakai satu quiz dengan difficulty
+turun otomatis `basic`. Lihat `docs/TOPIC-PROGRESS.md`.
 
 ### Phase 9 — Streamlit Interface
 

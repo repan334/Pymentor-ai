@@ -11,6 +11,8 @@ Recommendation = Literal[
     "try_advanced",
 ]
 
+Difficulty = Literal["basic", "intermediate", "advanced"]
+
 
 class TopicError(RuntimeError):
     code = "topic_failed"

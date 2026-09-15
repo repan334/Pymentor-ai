@@ -37,6 +37,23 @@ Score adalah performa latihan pada quiz yang dihitung, bukan mastery yang terval
 secara ilmiah. Aturan tidak memanggil model dan tidak memilih difficulty quiz secara
 adaptif.
 
+## Difficulty adaptif
+
+Mulai revision `20260914_0006`, create quiz tanpa field `difficulty` menurunkan
+tingkat dari rekomendasi topic dengan aturan murni berbasis bukti:
+
+| Recommendation | Difficulty turunan |
+| --- | --- |
+| `insufficient_evidence` | `basic` |
+| `review_material` | `basic` |
+| `practice_more` | `intermediate` |
+| `try_advanced` | `advanced` |
+
+Derivation tidak memanggil model dan tidak menyimpan counter baru. Difficulty
+eksplisit dari client tetap dihormati, dan quiz legacy tetap `difficulty=null`.
+Difficulty turunan adalah target kedalaman soal untuk generation prompt
+`grounded-quiz-v2`, bukan klaim mastery.
+
 ## Endpoint
 
 - `POST /api/v1/topics`: buat ID stabil; respons menyebut jumlah quiz legacy exact-match.

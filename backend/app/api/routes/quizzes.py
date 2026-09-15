@@ -110,6 +110,7 @@ def create_quiz(
             topic=request.topic,
             document_ids=request.document_ids,
             question_count=request.question_count,
+            difficulty=request.difficulty,
         )
     except (QuizInputError, TopicInputError, SearchInputError, QuizInsufficientContext) as exc:
         raise _error(422, exc.code, str(exc)) from exc

@@ -108,7 +108,22 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
             )
             quiz_id = public_quiz.id
             assert chat.calls == 1
+            assert public_quiz.difficulty == "basic"
             assert not hasattr(public_quiz.questions[0], "correct_option_id")
+
+            advanced_quiz = service.create_quiz(
+                topic_id=topic,
+                topic=topic,
+                document_ids=[document_id],
+                question_count=1,
+                difficulty="advanced",
+            )
+            advanced_quiz_id = advanced_quiz.id
+            assert advanced_quiz.difficulty == "advanced"
+            stored = session.scalars(
+                select(Quiz.difficulty).where(Quiz.id.in_([quiz_id, advanced_quiz_id]))
+            ).all()
+            assert sorted(stored) == ["advanced", "basic"]
             correct_option = public_quiz.questions[0].options[0]
             answer = SubmittedAnswer(
                 question_id=public_quiz.questions[0].id,
@@ -141,13 +156,13 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
             assert wrong.correct_count == 0
             assert wrong.percentage == 0.0
 
-            quiz_page = service.list_quizzes(
-                limit=10, offset=0, topic_id=topic, unassigned=False
-            )
+            quiz_page = service.list_quizzes(limit=10, offset=0, topic_id=topic, unassigned=False)
             attempt_page = service.list_attempts(limit=10, offset=0, quiz_id=quiz_id)
-            assert quiz_page.total == 1
-            assert quiz_page.items[0].id == quiz_id
-            assert quiz_page.items[0].topic_id == topic
+            assert quiz_page.total == 2
+            assert {item.id: item.difficulty for item in quiz_page.items} == {
+                quiz_id: "basic",
+                advanced_quiz_id: "advanced",
+            }
             assert attempt_page.total == 2
             assert {item.id for item in attempt_page.items} == {first.id, wrong.id}
 
@@ -160,6 +175,21 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
                 percentage=Decimal("0.00"),
             )
             session.add(duplicate)
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+
+            invalid_difficulty = Quiz(
+                topic_id=topic,
+                topic=topic,
+                question_count=1,
+                difficulty="extreme",
+                llm_provider="gemini",
+                llm_model="gemini-3.6-flash",
+                prompt_version="grounded-quiz-v2",
+                generation_profile="gemini:gemini-3.6-flash:grounded-quiz-v2",
+            )
+            session.add(invalid_difficulty)
             with pytest.raises(IntegrityError):
                 session.commit()
             session.rollback()
@@ -190,8 +220,7 @@ def test_neon_quiz_snapshot_scoring_idempotency_and_unique_constraint() -> None:
         assert attempt_ids[0] == attempt_ids[1]
     finally:
         with engine.begin() as connection:
-            if quiz_id is not None:
-                connection.execute(delete(Quiz).where(Quiz.id == quiz_id))
+            connection.execute(delete(Quiz).where(Quiz.topic == topic))
             connection.execute(delete(Topic).where(Topic.id == topic))
         engine.dispose()
 

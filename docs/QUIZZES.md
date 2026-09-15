@@ -4,16 +4,22 @@
 
 Phase 7 menyediakan kuis pilihan tunggal berbasis chunk yang sudah eligible untuk
 retrieval. Kuis dibuat sinkron dalam satu request dengan profil
-`gemini:gemini-3.6-flash:grounded-quiz-v1`. Default `question_count` adalah 3 dan
-maksimum MVP adalah 5. Tidak ada difficulty adaptif, mastery, atau rekomendasi;
-bagian tersebut tetap milik Phase 8. Mulai Phase 8, create quiz juga wajib menyertakan
-ID topic stabil yang telah dibuat melalui `POST /api/v1/topics`.
+`gemini:gemini-3.6-flash:grounded-quiz-v2`. Default `question_count` adalah 3 dan
+maksimum MVP adalah 5. Mulai Phase 8, create quiz juga wajib menyertakan ID topic
+stabil yang telah dibuat melalui `POST /api/v1/topics`.
+
+Difficulty adaptif dilengkapi pada revision `20260914_0006`. Field `difficulty`
+opsional menerima `basic`, `intermediate`, atau `advanced`. Jika dihilangkan,
+backend menurunkannya dari progress topic (aturan di `docs/TOPIC-PROGRESS.md`)
+tanpa model call; nilai eksplisit dari client tetap dihormati. Quiz yang dibuat
+sebelum revision `0006` tetap menyimpan `difficulty: null` karena tingkatnya
+tidak diketahui dan tidak dikarang.
 
 Konfigurasi quiz memakai `Settings` yang sama dengan API lain:
 
 | Setting | Default |
 | --- | --- |
-| `QUIZ_PROMPT_VERSION` | `grounded-quiz-v1` |
+| `QUIZ_PROMPT_VERSION` | `grounded-quiz-v2` |
 | `QUIZ_MAX_TOPIC_CHARACTERS` | `500` |
 | `QUIZ_MAX_QUESTION_COUNT` | `5` |
 | `QUIZ_RETRIEVAL_TOP_K` | `8` |
@@ -24,21 +30,27 @@ Konfigurasi quiz memakai `Settings` yang sama dengan API lain:
 
 ## Alur pembuatan
 
-1. Backend memvalidasi topik, jumlah soal, dan scope dokumen. `document_ids=null`
-   berarti semua dokumen eligible; `document_ids=[]` berarti corpus kosong.
+1. Backend memvalidasi topik, jumlah soal, difficulty opsional, dan scope dokumen.
+   `document_ids=null` berarti semua dokumen eligible; `document_ids=[]` berarti
+   corpus kosong. Difficulty yang dihilangkan diturunkan dari progress topic sebelum
+   retrieval; keputusan adaptif tidak memanggil model.
 2. `SearchService` dipanggil langsung dan menutup transaksi bacanya sebelum
    generation. Hanya dokumen dengan profil embedding/checksum aktif yang dipakai.
 3. Chunk dideduplikasi, dibatasi, lalu diberi ID lokal `S1`, `S2`, dan seterusnya.
    Topik serta dokumen diperlakukan sebagai data tidak tepercaya.
-4. Gemini mengembalikan structured output. Backend menolak soal/opsi kosong, opsi
-   duplikat, jumlah soal tidak lengkap, indeks kunci di luar 0-3, dan reference ID
-   di luar konteks.
-5. Setelah output lengkap tervalidasi, quiz, pertanyaan, empat opsi, kunci,
-   explanation, dan snapshot sumber disimpan dalam satu transaksi singkat.
+4. Prompt `grounded-quiz-v2` membawa `TOPIC`, `DIFFICULTY`, `QUESTION_COUNT`, dan
+   `SOURCE_DATA`. Gemini mengembalikan structured output. Backend menolak soal/opsi
+   kosong, opsi duplikat, jumlah soal tidak lengkap, indeks kunci di luar 0-3, dan
+   reference ID di luar konteks.
+5. Setelah output lengkap tervalidasi, quiz, difficulty efektif, pertanyaan, empat
+   opsi, kunci, explanation, dan snapshot sumber disimpan dalam satu transaksi
+   singkat.
 
 Provider dipanggil sebelum transaksi penyimpanan dimulai. Error provider tidak
 meninggalkan quiz setengah jadi. Validasi empat opsi dan satu key adalah pemeriksaan
 struktur; kebenaran semantik dan fakta bahwa hanya satu opsi benar tetap perlu review.
+Kesesuaian soal dengan difficulty yang diminta adalah penilaian model yang
+probabilistik, bukan jaminan terkalibrasi.
 
 ## Kontrak API
 
@@ -53,13 +65,16 @@ POST /api/v1/quizzes
   "topic_id": "python-functions",
   "topic": "fungsi tanpa return eksplisit",
   "document_ids": [20],
-  "question_count": 1
+  "question_count": 1,
+  "difficulty": "intermediate"
 }
 ```
 
-Respons HTTP 201 dan `GET /api/v1/quizzes/{quiz_id}` hanya memuat ID, pertanyaan,
-serta opsi. Keduanya sengaja tidak menampilkan `correct_option_id`, `is_correct`,
-explanation, atau sumber.
+`difficulty` opsional; bila dihilangkan, backend menurunkan `basic`, `intermediate`,
+atau `advanced` dari progress topic. Respons HTTP 201 dan
+`GET /api/v1/quizzes/{quiz_id}` memuat difficulty efektif, pertanyaan, serta opsi.
+Keduanya sengaja tidak menampilkan `correct_option_id`, `is_correct`, explanation,
+atau sumber.
 
 `GET /api/v1/quizzes?limit=20&offset=0` menyediakan daftar metadata snapshot publik
 untuk navigasi UI. Filter `topic_id` memilih satu topik, sedangkan

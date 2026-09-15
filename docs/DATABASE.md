@@ -90,6 +90,16 @@ menebak assignment dari teks lama; pencocokan exact-name dan assignment eksplisi
 dilakukan application service. Progress tidak disimpan sebagai counter atau tabel
 agregat: query menghitung ulang latest finalized attempt per quiz.
 
+Revision `20260914_0006` menambahkan tingkat difficulty pada snapshot quiz tanpa
+mengubah tabel lain:
+
+- `quizzes.difficulty`: `basic`, `intermediate`, `advanced`, atau `null` untuk quiz
+  legacy yang tingkatnya tidak diketahui;
+- check constraint `quiz_difficulty_valid` menolak nilai di luar ketiga tingkat.
+
+Migration tidak menebak difficulty untuk quiz lama; derivation adaptif dan nilai
+eksplisit ditulis oleh application service saat generation.
+
 ## Alur migrasi aman
 
 Tinjau revision dan SQL sebelum menerapkan perubahan:
@@ -118,6 +128,8 @@ Downgrade `0004` menghapus seluruh quiz dan attempt, sehingga juga tidak boleh
 dijalankan pada data pengguna tanpa backup/rencana pemulihan.
 Downgrade `0005` menghapus registry topic dan assignment, sehingga juga kehilangan
 pengelompokan progress walaupun quiz/attempt tetap ada.
+Downgrade `0006` menghapus kolom dan constraint difficulty; quiz serta attempt tetap
+ada tetapi tingkat kesulitan tidak lagi tersimpan.
 
 ## Verifikasi
 

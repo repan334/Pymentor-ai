@@ -26,6 +26,7 @@ def _quiz() -> QuizView:
         topic_id="python-functions",
         topic="fungsi Python",
         question_count=1,
+        difficulty="basic",
         questions=(
             QuizQuestionView(
                 id=20,
@@ -129,8 +130,10 @@ def test_create_and_get_hide_key_explanation_and_sources() -> None:
     assert created.status_code == 201
     assert fetched.status_code == 200
     assert service.calls[0][1]["topic_id"] == "python-functions"
+    assert service.calls[0][1]["difficulty"] is None
     for payload in (created.json(), fetched.json()):
         assert payload["topic_id"] == "python-functions"
+        assert payload["difficulty"] == "basic"
         serialized = str(payload)
         assert "correct_option" not in serialized
         assert "is_correct" not in serialized
@@ -142,6 +145,32 @@ def test_create_and_get_hide_key_explanation_and_sources() -> None:
             {"id": 32, "text": "False"},
             {"id": 33, "text": "Error"},
         ]
+
+
+def test_create_forwards_explicit_difficulty_and_rejects_unknown_values() -> None:
+    service = FakeQuizService()
+    created = _client(service).post(
+        "/api/v1/quizzes",
+        json={
+            "topic_id": "python-functions",
+            "topic": "fungsi Python",
+            "question_count": 1,
+            "difficulty": "advanced",
+        },
+    )
+    rejected = _client(FakeQuizService()).post(
+        "/api/v1/quizzes",
+        json={
+            "topic_id": "python-functions",
+            "topic": "fungsi Python",
+            "question_count": 1,
+            "difficulty": "extreme",
+        },
+    )
+
+    assert created.status_code == 201
+    assert service.calls[0][1]["difficulty"] == "advanced"
+    assert rejected.status_code == 422
 
 
 def test_submit_reveals_review_only_after_complete_submission() -> None:

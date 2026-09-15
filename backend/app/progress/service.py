@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Quiz, QuizAttempt, Topic
 from app.progress.models import (
+    Difficulty,
     QuizTopicAssignment,
     QuizTopicNotFound,
     Recommendation,
@@ -187,6 +188,14 @@ def calculate_topic_progress(
     if score < Decimal("80"):
         return score, "practice_more"
     return score, "try_advanced"
+
+
+def derive_difficulty(recommendation: Recommendation) -> Difficulty:
+    if recommendation == "try_advanced":
+        return "advanced"
+    if recommendation == "practice_more":
+        return "intermediate"
+    return "basic"
 
 
 def validate_topic_id(value: str) -> str:

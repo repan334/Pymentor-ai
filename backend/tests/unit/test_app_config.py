@@ -108,7 +108,7 @@ def test_phase_6_chat_profile_and_budgets_have_safe_defaults() -> None:
     assert settings.chat_thinking_budget < settings.chat_max_output_tokens
     assert settings.chat_max_context_chunk_characters <= settings.chat_max_context_characters
     assert settings.chat_max_top_k <= 20
-    assert settings.quiz_prompt_version == "grounded-quiz-v1"
+    assert settings.quiz_prompt_version == "grounded-quiz-v2"
     assert settings.quiz_max_question_count == 5
     assert settings.quiz_thinking_budget < settings.quiz_max_output_tokens
     assert settings.quiz_max_context_chunk_characters <= settings.quiz_max_context_characters

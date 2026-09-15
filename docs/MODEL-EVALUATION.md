@@ -81,9 +81,11 @@ estimasi kapasitas produksi.
 
 Akuntansi seluruh pekerjaan live Phase 6 recovery + Phase 7 adalah 48 inference dari
 batas 60: 28 embedding dan 20 generation, tanpa retry. Satu Models API discovery
-request dicatat terpisah. Error inference: dua HTTP 404 pada model lama, satu timeout
-quiz sebelum budget diperkecil, satu 503 high demand, dan satu kuota. Run ulang quiz
-dengan budget 2048/128 kemudian lulus.
+request dicatat terpisah. Verifikasi live difficulty adaptif Phase 8 tanggal
+2026-09-15 memakai 3 inference tambahan (index, retrieve, generate), sehingga
+akuntansi kumulatif menjadi 51 dari 60. Error inference: dua HTTP 404 pada model
+lama, satu timeout quiz sebelum budget diperkecil, satu 503 high demand, dan satu
+kuota. Run ulang quiz dengan budget 2048/128 kemudian lulus.
 
 ## Menjalankan validasi
 
