@@ -41,6 +41,9 @@ Limit ingestion default:
 
 - `MAX_UPLOAD_SIZE_MB=10`: byte file aktual setelah multipart diparse.
 - `MAX_MULTIPART_BODY_SIZE_MB=11`: seluruh body multipart termasuk envelope.
+- `MAX_JSON_BODY_SIZE_MB=1`: body JSON request mutation (POST/PUT) di luar route
+  upload dokumen. Body yang lebih besar ditolak middleware ASGI dengan HTTP 413
+  dan kode `json_body_too_large` sebelum routing.
 - `MAX_PDF_PAGES=200`.
 - `MAX_EXTRACTED_CHARACTERS=2000000`.
 - `INGESTION_CHUNK_SIZE=500` dan `INGESTION_CHUNK_OVERLAP=100`.

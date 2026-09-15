@@ -227,4 +227,7 @@ dipindahkan dari model 2.5 yang sudah ditutup bagi pengguna baru ke
   `difficulty=null`. Verifikasi live lulus dengan satu quiz difficulty turunan.
 - Phase 9 menyediakan UI Streamlit lokal untuk materi, tutor, quiz, dan progres melalui
   satu HTTP client FastAPI. UI tidak memiliki akses database atau provider langsung.
+- Phase 11 dimulai dengan batas body JSON (`MAX_JSON_BODY_SIZE_MB=1`, HTTP 413) pada
+  seluruh route mutation, hasil review QC/pentest 15 September 2026. Rate limiting,
+  logging, dan deployment masih terbuka.
 - Status dan batasan setiap fase dicatat terpisah dalam roadmap.

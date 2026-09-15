@@ -208,12 +208,20 @@ holdout belum dijalankan akibat kuota dan baseline kecil ini bukan evaluasi prod
 
 ### Phase 11 — Security and Deployment
 
-- Input and file validation.
-- Secret management.
-- Logging.
-- Rate limiting.
-- Production deployment.
-- Optional Docker packaging.
+- [x] Input and file validation (batas multipart/JSON body, batas field, pemeriksaan
+  format serta encoding; limit body JSON ditambah 2026-09-15 setelah review QC/pentest).
+- [x] Secret management (`.env`/`.env.local`, `SecretStr`, tanpa kredensial di Git,
+  respons error, atau OpenAPI).
+- [ ] Rate limiting.
+- [ ] Logging.
+- [ ] Production deployment.
+- [ ] Optional Docker packaging.
+
+Phase 11 dimulai 2026-09-15 dari review quality-control/penetration-testing: seluruh
+route mutation JSON kini dibatasi `MAX_JSON_BODY_SIZE_MB=1` oleh middleware ASGI
+dengan HTTP 413 `json_body_too_large`; route upload multipart tetap memakai limit
+khususnya sendiri. Rate limiting dan logging masih terbuka dan wajib ada sebelum
+deployment publik karena API belum memiliki autentikasi.
 
 ### Phase 12 — Portfolio Completion
 

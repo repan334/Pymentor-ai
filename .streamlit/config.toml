@@ -7,3 +7,6 @@ font = "sans-serif"
 
 [server]
 headless = true
+# Match the backend MAX_UPLOAD_SIZE_MB so the uploader hint and client-side
+# rejection agree with the API's real file limit.
+maxUploadSize = 10

@@ -112,6 +112,8 @@ def test_phase_6_chat_profile_and_budgets_have_safe_defaults() -> None:
     assert settings.quiz_max_question_count == 5
     assert settings.quiz_thinking_budget < settings.quiz_max_output_tokens
     assert settings.quiz_max_context_chunk_characters <= settings.quiz_max_context_characters
+    assert settings.max_json_body_size_mb == 1
+    assert settings.max_json_body_size_bytes == 1024 * 1024
 
 
 @pytest.mark.parametrize(
@@ -131,6 +133,7 @@ def test_phase_6_chat_profile_and_budgets_have_safe_defaults() -> None:
         {"quiz_retrieval_top_k": 21},
         {"quiz_max_context_characters": 10, "quiz_max_context_chunk_characters": 11},
         {"quiz_thinking_budget": 2048, "quiz_max_output_tokens": 2048},
+        {"max_json_body_size_mb": 0},
     ],
 )
 def test_incompatible_chat_profiles_and_limits_are_rejected(

@@ -51,6 +51,7 @@ class Settings(BaseSettings):
 
     max_upload_size_mb: int = 10
     max_multipart_body_size_mb: int = 11
+    max_json_body_size_mb: int = 1
     max_pdf_pages: int = 200
     max_extracted_characters: int = 2_000_000
     ingestion_chunk_size: int = 500
@@ -134,6 +135,7 @@ class Settings(BaseSettings):
     @field_validator(
         "max_upload_size_mb",
         "max_multipart_body_size_mb",
+        "max_json_body_size_mb",
         "max_pdf_pages",
         "max_extracted_characters",
         "ingestion_chunk_size",
@@ -270,6 +272,10 @@ class Settings(BaseSettings):
     @property
     def max_multipart_body_size_bytes(self) -> int:
         return self.max_multipart_body_size_mb * 1024 * 1024
+
+    @property
+    def max_json_body_size_bytes(self) -> int:
+        return self.max_json_body_size_mb * 1024 * 1024
 
     @property
     def application_url(self) -> URL:

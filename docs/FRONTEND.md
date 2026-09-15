@@ -38,6 +38,8 @@ di masing-masing terminal untuk berhenti.
 1. **Materi:** upload TXT/MD/PDF, pastikan ingestion `processed`, lalu tekan tindakan
    indexing secara eksplisit. Status ingestion dan indexing ditampilkan terpisah.
    Gunakan inspeksi untuk melihat teks acuan, offset karakter, halaman, dan chunk.
+   `.streamlit/config.toml` menetapkan `server.maxUploadSize = 10` agar batas UI
+   uploader sama dengan `MAX_UPLOAD_SIZE_MB` backend (10 MB).
 2. **Tutor:** pilih semua dokumen siap, subset tertentu, atau corpus kosong. Ketiga
    pilihan mempertahankan semantik `null`, daftar ID, dan `[]` dari backend. Setiap
    request berdiri sendiri; tidak ada riwayat percakapan.
